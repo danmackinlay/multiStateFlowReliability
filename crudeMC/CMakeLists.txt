@@ -1,0 +1,3 @@
+cmake_minimum_required(VERSION 3.1)
+add_executable(crudeMC crudeMC.cpp)
+target_link_libraries(crudeMC PUBLIC multiStateCommon)

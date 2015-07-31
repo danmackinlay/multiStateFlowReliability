@@ -1,5 +1,6 @@
-#include "Arguments.h"
+#include "arguments.h"
 #include <boost/iterator/counting_iterator.hpp>
+#include <iostream>
 namespace multistateTurnip
 {
 	bool readN(boost::program_options::variables_map& variableMap, int& out)

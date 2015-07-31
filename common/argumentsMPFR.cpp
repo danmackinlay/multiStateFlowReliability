@@ -1,5 +1,6 @@
-#include "ArgumentsMPFR.h"
+#include "argumentsMPFR.h"
 #include <fstream>
+#include <iostream>
 #include <boost/algorithm/string.hpp>
 #include <boost/tokenizer.hpp>
 namespace multistateTurnip
@@ -105,7 +106,7 @@ namespace multistateTurnip
 		}
 		return true;
 	}
-	bool readContext(boost::program_options::variables_map& variableMap, Context& out, capacityDistribution& distribution, const mpfr_class& threshold)
+	bool readContext(boost::program_options::variables_map& variableMap, Context& out, capacityDistribution&& distribution, const mpfr_class& threshold)
 	{
 		boost::shared_ptr<std::vector<int> > interestVertices;
 		if(variableMap.count("interestVertices") != 1)
@@ -143,7 +144,7 @@ namespace multistateTurnip
 			std::string message;
 			try
 			{
-				out = Context::fromFile(variableMap["graphFile"].as<std::string>(), successful, interestVertices, message, distribution, threshold);
+				out = Context::fromFile(variableMap["graphFile"].as<std::string>(), successful, interestVertices, message, std::move(distribution), threshold);
 			}
 			catch(std::runtime_error& err)
 			{
@@ -155,7 +156,6 @@ namespace multistateTurnip
 				std::cout << "Error reading graphml file. " << message << ". Exiting..." << std::endl;
 				return false;
 			}
-			std::size_t nVertices = boost::num_vertices(out.getGraph());
 		}
 		else if(variableMap.count("gridGraph") == 1)
 		{
@@ -176,7 +176,7 @@ namespace multistateTurnip
 				std::cout << "Input 'interestVertices' must contain numbers between 0 and (nVertices - 1) inclusive" << std::endl;
 				return false;
 			}
-			out = Context::gridContext(gridDimension, interestVertices, distribution, threshold);
+			out = Context::gridContext(gridDimension, interestVertices, std::move(distribution), threshold);
 		}
 		else if(variableMap.count("completeGraph") == 1)
 		{
@@ -191,7 +191,7 @@ namespace multistateTurnip
 				std::cout << "There must be two vertices of interest" << std::endl;
 				return false;
 			}
-			out = Context::completeContext(nVertices, minInterest, distribution, threshold);
+			out = Context::completeContext(nVertices, minInterest, std::move(distribution), threshold);
 		}
 		return true;
 	}

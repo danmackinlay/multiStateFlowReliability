@@ -1,7 +1,8 @@
 #include <boost/program_options.hpp>
-#include "Arguments.h"
-#include "ArgumentsMPFR.h"
+#include "arguments.h"
+#include "argumentsMPFR.h"
 #include "includeMPFR.h"
+#include <iostream>
 namespace multistateTurnip
 {
 	int main(int argc, char **argv)

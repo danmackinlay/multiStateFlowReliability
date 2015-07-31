@@ -23,14 +23,14 @@ namespace multistateTurnip
 		> internalDirectedGraph;
 		typedef std::pair<float, float> vertexPosition;
 
-		Context(boost::shared_ptr<const inputGraph> graph, boost::shared_ptr<const std::vector<int> > interestVertices, boost::shared_ptr<std::vector<vertexPosition> > vertexPositions, capacityDistribution& distribution, const mpfr_class& threshold);
+		Context(boost::shared_ptr<const inputGraph> graph, boost::shared_ptr<const std::vector<int> > interestVertices, boost::shared_ptr<std::vector<vertexPosition> > vertexPositions, capacityDistribution&& distribution, const mpfr_class& threshold);
 
 		Context& operator=(Context&& other);
 		Context(Context&& other);
 		~Context();
 		
-		static Context gridContext(int gridDimension, boost::shared_ptr<const std::vector<int> > interestVertices, capacityDistribution& distribution, const mpfr_class& threshold);
-		static Context fromFile(std::string path, bool& successful, boost::shared_ptr<const std::vector<int> > interestVertices, std::string& message, capacityDistribution& distribution, const mpfr_class& threshold);
+		static Context gridContext(int gridDimension, boost::shared_ptr<const std::vector<int> > interestVertices, capacityDistribution&& distribution, const mpfr_class& threshold);
+		static Context fromFile(std::string path, bool& successful, boost::shared_ptr<const std::vector<int> > interestVertices, std::string& message, capacityDistribution&& distribution, const mpfr_class& threshold);
 		static Context emptyContext();
 		const internalGraph& getGraph() const;
 		const internalDirectedGraph& getDirectedGraph() const;
@@ -40,7 +40,7 @@ namespace multistateTurnip
 		const std::vector<vertexPosition>& getVertexPositions() const;
 		const capacityDistribution& getDistribution() const;
 		std::vector<double>& getCapacityVector() const;
-		static Context completeContext(int nVertices, int nInterestVertices, capacityDistribution& distribution, const mpfr_class& threshold);
+		static Context completeContext(int nVertices, int nInterestVertices, capacityDistribution&& distribution, const mpfr_class& threshold);
 		double getMaxFlow(std::vector<double>& capacities) const;
 		double getMaxFlow(std::vector<double>& capacities, Context::internalGraph::vertex_descriptor source, Context::internalGraph::vertex_descriptor sink) const;
 	private:
