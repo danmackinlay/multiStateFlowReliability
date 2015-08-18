@@ -9,7 +9,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
 endif()
 
 #Find boost packages
-find_package(Boost 1.53.0 COMPONENTS graph program_options REQUIRED)
+find_package(Boost 1.53.0 COMPONENTS graph program_options serialization regex REQUIRED)
 
 if(WIN32)
 	find_package(mpfr)

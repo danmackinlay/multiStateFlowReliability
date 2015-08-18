@@ -1,5 +1,5 @@
 #Fixed parameters
-graphFile <- "../../networkReliability/dodecahedronReordered.graphml"
+graphFile <- "./dodecahedronReordered.graphml"
 nCrudeMC <- as.integer(10000000)
 nTurnip <- as.integer(1000000)
 nTurnipFull <- as.integer(100000)
@@ -81,7 +81,7 @@ colnames(scenarios) <- c("Distribution", "Threshold")
 
 #Output data
 times <- matrix(0, nrow = nrow(scenarios), ncol = 7)
-colnames(times) <- c("crudeMC", "PMC", "PMCPartialTurnip", "TurnipSingleMaxFlow", "TurnipFull1", "TurnipFull2", "TurnipFull3")
+colnames(times) <- c("crudeMC", "PMC", "PMCPartialTurnip", "TurnipSingleMaxFlow", "TurnipFull3", "TurnipFull2", "TurnipFull1")
 estimates <- relativeErrors <- times
 
 #Check directories

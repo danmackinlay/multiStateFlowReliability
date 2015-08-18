@@ -190,7 +190,7 @@ namespace allPointsMaxFlow
 		typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType star(nVertices);
 		for (std::size_t i = 1; i < nVertices; i++)
 		{
-			boost::add_edge(i, 0, i-1, star);
+			boost::add_edge(i, 0, (int)i-1, star);
 		}
 		for (std::size_t s = 1; s < nVertices; s++)
 		{

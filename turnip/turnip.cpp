@@ -166,7 +166,7 @@ namespace multistateTurnip
 			{
 				boost::exponential_distribution<> repairDist(originalRates[j]);
 				repairTimes[j].second = repairDist(randomSource);
-				repairTimes[j].first = j;
+				repairTimes[j].first = (int)j;
 			}
 			std::sort(repairTimes.begin(), repairTimes.end(), secondArgumentSorter);
 			//No edges have yet been seen
