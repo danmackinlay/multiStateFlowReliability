@@ -14,7 +14,7 @@ thresholds <- 2:4
 #crudeMC function
 crudeMC <- function(distribution, seed, threshold)
 {
-	commandLine <- paste0("../x64/Release/crudeMC.exe --threshold ", threshold, " --seed ", seed, " --uniformCapacity 0 ", distribution-1 , " --n ", nCrudeMC, " --graphFile ", graphFile, " --interestVertices ", interestVertices)
+	commandLine <- paste0("../build/x64/Release/crudeMC.exe --threshold ", threshold, " --seed ", seed, " --uniformCapacity 0 ", distribution-1 , " --n ", nCrudeMC, " --graphFile ", graphFile, " --interestVertices ", interestVertices)
 	start <- Sys.time()
 	result <- system(commandLine, intern=TRUE)
 	end <- Sys.time()
@@ -29,7 +29,7 @@ crudeMC <- function(distribution, seed, threshold)
 #PMC function
 pmc <- function(distribution, seed, threshold, turnip = FALSE)
 {
-	commandLine <- paste0("../x64/Release/PMC.exe --threshold ", threshold, " --seed ", seed, " --uniformCapacity 0 ", distribution-1, " --n ", nPMC, " --graphFile ", graphFile, " --interestVertices ", interestVertices)
+	commandLine <- paste0("../build/x64/Release/PMC.exe --threshold ", threshold, " --seed ", seed, " --uniformCapacity 0 ", distribution-1, " --n ", nPMC, " --graphFile ", graphFile, " --interestVertices ", interestVertices)
 	if(turnip)
 	{
 		commandLine <- paste0(commandLine, " --turnip")
@@ -50,11 +50,11 @@ pmc <- function(distribution, seed, threshold, turnip = FALSE)
 	return(list(time = unclass(difftime(end, start, units="mins"))[1], relativeError = relativeError, estimate = estimate))
 }
 
-turnip <- function(distribution, seed, threshold, turnip = FALSE, full = FALSE, fullIncrement = 1)
+turnip <- function(distribution, seed, threshold, full = FALSE, fullIncrement = 1)
 {
 	if(full) nSamples <- nTurnipFull
 	else nSamples <- nTurnip
-	commandLine <- paste0("../x64/Release/turnip.exe --threshold ", threshold, " --seed ", seed, " --uniformCapacity 0 ", distribution-1, " --n ", nTurnip, " --graphFile ", graphFile, " --interestVertices ", interestVertices)
+	commandLine <- paste0("../build/x64/Release/turnip.exe --threshold ", threshold, " --seed ", seed, " --uniformCapacity 0 ", distribution-1, " --n ", nTurnip, " --graphFile ", graphFile, " --interestVertices ", interestVertices)
 	if(full)
 	{
 		commandLine <- paste0(commandLine, " --full ", fullIncrement)
@@ -82,7 +82,7 @@ colnames(scenarios) <- c("Distribution", "Threshold")
 #Output data
 times <- matrix(0, nrow = nrow(scenarios), ncol = 7)
 colnames(times) <- c("crudeMC", "PMC", "PMCPartialTurnip", "TurnipSingleMaxFlow", "TurnipFull3", "TurnipFull2", "TurnipFull1")
-estimates <- relativeErrors <- times
+timesPerSample <- estimates <- relativeErrors <- times
 
 #Check directories
 if(!file.exists("crudeMC")) dir.create("crudeMC")
@@ -104,6 +104,7 @@ turnipSpecificIncrement <- function(increment)
 	}
 	else load(turnipFullFile)
 	times[scenarioIndex, name] <<- turnipFullResult$time
+	timesPerSample[scenarioIndex, name] <<- turnipFullResult$time / nTurnipFull
 	relativeErrors[scenarioIndex, name] <<- turnipFullResult$relativeError
 	estimates[scenarioIndex, name] <<- turnipFullResult$estimate
 	seed <<- seed + 1
@@ -124,7 +125,7 @@ for(scenarioIndex in 1:nrow(scenarios))
 	{
 		load(crudeMCFile)
 	}
-	times[scenarioIndex, "crudeMC"] <- crudeMCResult$time
+	times[scenarioIndex, "crudeMC"] <- crudeMCResult$time / nCrudeMC
 	relativeErrors[scenarioIndex, "crudeMC"] <- crudeMCResult$relativeError
 	estimates[scenarioIndex, "crudeMC"] <- crudeMCResult$estimate
 	seed <- seed + 1
@@ -138,6 +139,7 @@ for(scenarioIndex in 1:nrow(scenarios))
 	}
 	else load(pmcFile)
 	times[scenarioIndex, "PMC"] <- pmcResult$time
+	timesPerSample[scenarioIndex, "PMC"] <- pmcResult$time / nPMC
 	relativeErrors[scenarioIndex, "PMC"] <- pmcResult$relativeError
 	estimates[scenarioIndex, "PMC"] <- pmcResult$estimate
 	seed <- seed + 1
@@ -151,6 +153,7 @@ for(scenarioIndex in 1:nrow(scenarios))
 	}
 	else load(pmcWithTurnipFile)
 	times[scenarioIndex, "PMCPartialTurnip"] <- pmcWithTurnipResult$time
+	timesPerSample[scenarioIndex, "PMCPartialTurnip"] <- pmcWithTurnipResult$time / nPMC
 	relativeErrors[scenarioIndex, "PMCPartialTurnip"] <- pmcWithTurnipResult$relativeError
 	estimates[scenarioIndex, "PMCPartialTurnip"] <- pmcWithTurnipResult$estimate
 	seed <- seed + 1
@@ -164,6 +167,7 @@ for(scenarioIndex in 1:nrow(scenarios))
 	}
 	else load(turnipFile)
 	times[scenarioIndex, "TurnipSingleMaxFlow"] <- turnipResult$time
+	timesPerSample[scenarioIndex, "TurnipSingleMaxFlow"] <- turnipResult$time/nTurnip
 	relativeErrors[scenarioIndex, "TurnipSingleMaxFlow"] <- turnipResult$relativeError
 	estimates[scenarioIndex, "TurnipSingleMaxFlow"] <- turnipResult$estimate
 	seed <- seed + 1
@@ -174,3 +178,4 @@ for(scenarioIndex in 1:nrow(scenarios))
 		turnipSpecificIncrement(increment)
 	}
 }
+save(scenarios, estimates, times, timesPerSample, relativeErrors, file = "./summarised.RData")
