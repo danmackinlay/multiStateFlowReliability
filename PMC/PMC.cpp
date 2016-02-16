@@ -108,7 +108,7 @@ namespace multistateTurnip
 		std::vector<mpfr_class> originalRatesExact;
 		//Set up the original edge indices and rates
 		//The initial rate at the start of each PMC step
-		mpfr_class sumAllRates;
+		mpfr_class sumAllRates = 0;
 		for(std::size_t i = 0; i < context.getNEdges(); i++)
 		{
 			mpfr_class cumulativeRates = 0;
