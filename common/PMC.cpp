@@ -1,8 +1,5 @@
-#include <boost/program_options.hpp>
+#include "PMC.h"
 #include "computeConditionalProb.h"
-#include "arguments.h"
-#include "argumentsMPFR.h"
-#include "includeMPFR.h"
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/range/algorithm/random_shuffle.hpp>
 #include <algorithm>
@@ -13,91 +10,12 @@ namespace multistateTurnip
 	{
 		return first.second < second.second;
 	}
-	int main(int argc, char **argv)
+	void pmc(pmcArgs& args)
 	{
-		mpfr_set_default_prec(1024);
-
-		boost::program_options::options_description options("Usage");
-		options.add_options()
-			("gridGraph", boost::program_options::value<int>(), "(int) The dimension of the square grid graph to use. Incompatible with graphFile and completeGraph. ")
-			("graphFile", boost::program_options::value<std::string>(), "(string) The path to a graphml file. Incompatible with gridGraph and completeGraph")
-			("completeGraph", boost::program_options::value<int>(), "(int) The number of vertices of the complete graph to use. ")
-			("capacityFile", boost::program_options::value<std::string>(), "(string) File containing capacity distribution data. Incompatible with graphFile and gridGraph")
-			("uniformCapacity", boost::program_options::value<std::vector<int> >()->multitoken(), "(int) Pair of integers a and b, so that capacities are uniform on the integer range [a, b]")
-			("threshold", boost::program_options::value<std::string>(), "(float) The threshold flow between the source and sink")
-			("n", boost::program_options::value<int>(), "(int) The number of simulations to perform. ")
-			("seed", boost::program_options::value<int>(), "(int) The random seed used to generate the random graphs. ")
-			("turnip", "(Flag) Should we make turnip-style optimisations?")
-			("interestVertices", boost::program_options::value<std::vector<int> >()->multitoken(), "(int) The vertices of interest, that should be connected. ")
-			("help", "Display this message");
-		
-		boost::program_options::variables_map variableMap;
-		try
-		{
-			boost::program_options::store(boost::program_options::parse_command_line(argc, argv, options), variableMap);
-		}
-		catch(boost::program_options::error& ee)
-		{
-			std::cerr << "Error parsing command line arguments: " << ee.what() << std::endl << std::endl;
-			std::cerr << options << std::endl;
-			return -1;
-		}
-		if(variableMap.count("help") > 0)
-		{
-			std::cout << 
-				"This program estimates the probability that the given graph is unreliable for the given vertices. That is, if edges are retained with a certain probability, what is the probability that the specified vertices are not all in the same connected component?\n\n"
-			;
-			std::cout << options << std::endl;
-			return 0;
-		}
-		bool useTurnip = variableMap.count("turnip") > 0;
-		int n;
-		if(!readN(variableMap, n))
-		{
-			return 0;
-		}
-		mpfr_class threshold;
-		if(!readThreshold(variableMap, threshold))
-		{
-			std::cout << "Unable to parse threshold value" << std::endl;
-			return 0;
-		}
-		Context context = Context::emptyContext();
-		double newThresholdD;
-		{
-			//Don't use this distribution - It gets moved into the Context object
-			capacityDistribution movedDistribution;
-			std::string error;
-			mpfr_class originalMinFlow;
-			//This alter the minimum flow to be zero, and returns the original.
-			if(!readCapacityDistribution(variableMap, movedDistribution, originalMinFlow, error))
-			{
-				std::cout << error << std::endl;
-				return 0;
-			}
-			mpfr_class newThreshold = threshold - originalMinFlow;
-			newThresholdD = (double)newThreshold;
-			//truncate the set of possible capacities at the new threshold, otherwise
-			//sorting that many edge repair times is a bottleneck in itself. 
-			movedDistribution = movedDistribution.truncateAtMax(newThreshold);
-			if(newThreshold < 0)
-			{
-				std::cout << "Minimum flow for all links is higher than the threshold" << std::endl;
-				return 0;
-			}
-			if(!readContext(variableMap, context, std::move(movedDistribution), newThreshold))
-			{
-				return 0;
-			}
-		}
-
-		boost::mt19937 randomSource;
-		readSeed(variableMap, randomSource);
-		
-		const capacityDistribution& distribution = context.getDistribution();
+		const capacityDistribution& distribution = args.context.getDistribution();
 		const std::vector<std::pair<double, double> >& cumulativeData = distribution.getCumulativeData();
 		std::size_t nLevels = distribution.getData().size();
-		std::size_t nParallelEdges = context.getNEdges() * (nLevels-1);
+		std::size_t nParallelEdges = args.context.getNEdges() * (nLevels-1);
 
 		//Describe all the parrallel edges - In terms of the rate of that parallel edge, 
 		//which original edge it belongs to, and which index of parallel edge it is among all the parallel edges 
@@ -109,7 +27,7 @@ namespace multistateTurnip
 		//Set up the original edge indices and rates
 		//The initial rate at the start of each PMC step
 		mpfr_class sumAllRates = 0;
-		for(std::size_t i = 0; i < context.getNEdges(); i++)
+		for(std::size_t i = 0; i < args.context.getNEdges(); i++)
 		{
 			mpfr_class cumulativeRates = 0;
 			originalEdgeIndex.insert(originalEdgeIndex.end(), nLevels-1, (int)i);
@@ -126,7 +44,7 @@ namespace multistateTurnip
 		//The sum of all the conditional probabilities
 		mpfr_class sumConditional = 0, sumSquaredConditional = 0;
 		//This stores the current capacities
-		std::vector<double>& capacityVector = context.getCapacityVector();
+		std::vector<double>& capacityVector = args.context.getCapacityVector();
 		//This stores the rates that go into the matrix exponential computation
 		std::vector<mpfr_class> ratesForPMC;
 		//Repair time vector
@@ -137,13 +55,13 @@ namespace multistateTurnip
 		//Only warn about stability once
 		bool warnedStability = false;
 		std::vector<mpfr_class> computeConditionalProbScratch;
-		for(int i = 0; i < n; i++)
+		for(int i = 0; i < args.n; i++)
 		{
 			//Simulate permutation
 			for(int j = 0; j < (int)nParallelEdges; j++)
 			{
 				boost::exponential_distribution<> repairDist(originalRates[j]);
-				repairTimes[j].second = repairDist(randomSource);
+				repairTimes[j].second = repairDist(args.randomSource);
 				repairTimes[j].first = j;
 			}
 			std::sort(repairTimes.begin(), repairTimes.end(), secondArgumentSorter);
@@ -172,11 +90,11 @@ namespace multistateTurnip
 					//Increase the capacity
 					capacityVector[2 * originalEdgeIndexThisLoop] = capacityVector[2 * originalEdgeIndexThisLoop + 1] = std::max(capacityVector[2 * originalEdgeIndexThisLoop + 1], (cumulativeData.rbegin() + originalEdgeLevel[parallelEdgeIndex])->first);
 					//determine whether or not we've hit the critical threshold
-					double currentFlow = context.getMaxFlow(capacityVector);
-					insufficientFlow = newThresholdD > currentFlow;
+					double currentFlow = args.context.getMaxFlow(capacityVector);
+					insufficientFlow = args.threshold > currentFlow;
 					//Add the current rate
 					ratesForPMC.push_back(currentRate);
-					if(useTurnip)
+					if(args.useTurnip)
 					{
 						//Start going back through the other parallel edges for this original edge
 						//if they hadn't already been observed to occur, adjust the rate to indicate that we don't need them.
@@ -204,25 +122,17 @@ namespace multistateTurnip
 			//mpfr_class additionalPart2 = computeConditionalProb(ratesForPMC);
 			if(additionalPart > 1 && !warnedStability)
 			{
-				std::cout << "Numerical stability problem detected" << std::endl;
+				std::string output = "Numerical stability problem detected";
+				args.outputFunc(output);
 				warnedStability = true;
 			}
 			sumConditional += additionalPart;
 			sumSquaredConditional += additionalPart*additionalPart;
 		}
-		mpfr_class estimateFirstMoment = sumConditional/n;
-		mpfr_class estimateSecondMoment = sumSquaredConditional/n;
-		mpfr_class varianceEstimate = estimateSecondMoment - estimateFirstMoment*estimateFirstMoment;
-		mpfr_class sqrtVarianceEstimate = boost::multiprecision::sqrt(varianceEstimate/n);
-		mpfr_class relativeErrorEstimate = sqrtVarianceEstimate / estimateFirstMoment;
-
-		std::cout << "Unreliability probability estimate was " << (double)estimateFirstMoment << std::endl;
-		std::cout << "Relative error was " << (double)relativeErrorEstimate << std::endl;
-		return 0;
+		args.estimateFirstMoment = sumConditional/args.n;
+		args.estimateSecondMoment = sumSquaredConditional/args.n;
+		args.varianceEstimate = args.estimateSecondMoment - args.estimateFirstMoment*args.estimateFirstMoment;
+		args.sqrtVarianceEstimate = boost::multiprecision::sqrt(args.varianceEstimate/args.n);
+		args.relativeErrorEstimate = args.sqrtVarianceEstimate / args.estimateFirstMoment;
 	}
-}
-
-int main(int argc, char **argv)
-{
-	return multistateTurnip::main(argc, argv);
 }
