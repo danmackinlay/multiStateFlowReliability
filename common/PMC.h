@@ -1,6 +1,7 @@
+#ifndef PMC_HEADER_GUARD
+#define PMC_HEADER_GUARD
 #include <functional>
 #include "context.h"
-#include <vector>
 #include "includeMPFR.h"
 #include <boost/random/mersenne_twister.hpp>
 namespace multistateTurnip
@@ -20,3 +21,4 @@ namespace multistateTurnip
 	};
 	void pmc(pmcArgs& args);
 }
+#endif
