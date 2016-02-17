@@ -4,7 +4,6 @@ set(CppFiles arguments.cpp argumentsMPFR.cpp capacityDistribution.cpp context.cp
 add_library(multiStateCommon STATIC ${CppFiles} ${Headers})
 target_link_libraries(multiStateCommon PUBLIC ${Boost_LIBRARIES} mpfr)
 target_include_directories(multiStateCommon PUBLIC ${Boost_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_features(multiStateCommon PUBLIC cxx_rvalue_references)
 target_compile_definitions(multiStateCommon PUBLIC BOOST_ALL_NO_LIB BOOST_ALL_DYN_LINK)
 
 if(WIN32)
