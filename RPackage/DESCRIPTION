@@ -12,6 +12,7 @@ Suggests: graph, igraph
 Depends: Rmpfr
 Collate:
 	'classes.R'
+	'turnip.R'
 	'pmc.R'
 	'crudeMC.R'
 	'onLoad.R'

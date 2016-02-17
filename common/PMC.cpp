@@ -6,9 +6,12 @@
 #include <boost/random/exponential_distribution.hpp>
 namespace multistateTurnip
 {
-	bool secondArgumentSorter(const std::pair<int, double>& first, const std::pair<int, double>& second)
+	namespace pmcPrivate
 	{
-		return first.second < second.second;
+		bool secondArgumentSorter(const std::pair<int, double>& first, const std::pair<int, double>& second)
+		{
+			return first.second < second.second;
+		}
 	}
 	void pmc(pmcArgs& args)
 	{
@@ -64,7 +67,7 @@ namespace multistateTurnip
 				repairTimes[j].second = repairDist(args.randomSource);
 				repairTimes[j].first = j;
 			}
-			std::sort(repairTimes.begin(), repairTimes.end(), secondArgumentSorter);
+			std::sort(repairTimes.begin(), repairTimes.end(), pmcPrivate::secondArgumentSorter);
 			//No edges have yet been seen
 			std::fill(alreadySeen.begin(), alreadySeen.end(), false);
 			//The first rate is going to be this

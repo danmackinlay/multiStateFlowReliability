@@ -13,6 +13,9 @@ namespace multistateTurnip
 	SEXP pmc_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP removeRedundant);
 	SEXP pmc_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP removeRedundant);
 	SEXP pmc_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP removeRedundant);
+	SEXP turnip_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp);
+	SEXP turnip_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp);
+	SEXP turnip_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp);
 }
 R_CallMethodDef callMethods[] = 
 {
@@ -22,6 +25,9 @@ R_CallMethodDef callMethods[] =
 	{"pmc_igraph", (DL_FUNC)&multistateTurnip::pmc_igraph, 7},
 	{"pmc_graphNEL", (DL_FUNC)&multistateTurnip::pmc_graphNEL, 7},
 	{"pmc_graphAM", (DL_FUNC)&multistateTurnip::pmc_graphAM, 7},
+	{"turnip_igraph", (DL_FUNC)&multistateTurnip::turnip_igraph, 8},
+	{"turnip_graphNEL", (DL_FUNC)&multistateTurnip::turnip_graphNEL, 8},
+	{"turnip_graphAM", (DL_FUNC)&multistateTurnip::turnip_graphAM, 8},
 	{NULL, NULL, 0}
 };
 RcppExport void R_init_multiStateFlowReliability(DllInfo *info)

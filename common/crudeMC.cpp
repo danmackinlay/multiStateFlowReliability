@@ -16,7 +16,7 @@ namespace multistateTurnip
 				capacityVector[2*edgeCounter] = capacityVector[2*edgeCounter + 1] = randomCapacityDistribution(args.randomSource);
 			}
 			double flow = context.getMaxFlow(capacityVector);
-			if(flow <= args.threshold) args.count++;
+			if(flow < args.threshold) args.count++;
 		}
 	}
 }

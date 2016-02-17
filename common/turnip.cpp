@@ -10,9 +10,12 @@
 #include "allPointsMaxFlow.hpp"
 namespace multistateTurnip
 {
-	bool secondArgumentSorter(const std::pair<int, double>& first, const std::pair<int, double>& second)
+	namespace turnipPrivate
 	{
-		return first.second < second.second;
+		bool secondArgumentSorter(const std::pair<int, double>& first, const std::pair<int, double>& second)
+		{
+			return first.second < second.second;
+		}
 	}
 	void turnip(turnipArgs& args)
 	{
@@ -85,7 +88,7 @@ namespace multistateTurnip
 				repairTimes[j].second = repairDist(args.randomSource);
 				repairTimes[j].first = (int)j;
 			}
-			std::sort(repairTimes.begin(), repairTimes.end(), secondArgumentSorter);
+			std::sort(repairTimes.begin(), repairTimes.end(), turnipPrivate::secondArgumentSorter);
 			//No edges have yet been seen
 			std::fill(alreadySeen.begin(), alreadySeen.end(), false);
 			//The first rate is going to be this
