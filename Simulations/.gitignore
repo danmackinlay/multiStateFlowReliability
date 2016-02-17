@@ -1,7 +1,3 @@
-crudeMC
-PMC
-PMCPartialTurnip
-TurnipSingleMaxFlow
-TurnipFull1
-TurnipFull2
-TurnipFull3
+/results
+/jobScript.Rout.*
+/slurm-*

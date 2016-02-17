@@ -8,7 +8,7 @@ for(i in 1:nrow(scenarios))
 	resultFile <- file.path("results", scenarios[i, "file"])
 	if(!file.exists(resultFile))
 	{
-		system2(command = "qsub", args = "submitScript.sh", env = paste0("SCENARIO_INDEX=", i), wait=TRUE)
+		system2(command = "sbatch", args = c(paste0("--export=SCENARIO_INDEX=", i), "submitScriptSlurm.sh"), wait=TRUE)
 		submittedJobs <- submittedJobs + 1
 		if(submittedJobs == maxJobs) break
 	}
