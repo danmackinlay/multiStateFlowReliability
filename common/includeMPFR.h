@@ -3,5 +3,5 @@
 //#include "mpreal.h"
 //typedef mpfr::mpreal mpfr_class;
 #include <boost/multiprecision/mpfr.hpp>
-typedef boost::multiprecision::mpfr_float mpfr_class;
+typedef boost::multiprecision::mpfr_float_500 mpfr_class;
 #endif 

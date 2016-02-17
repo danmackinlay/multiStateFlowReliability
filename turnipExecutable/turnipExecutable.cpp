@@ -7,8 +7,6 @@ namespace multistateTurnip
 {
 	int main(int argc, char **argv)
 	{
-		mpfr_set_default_prec(1024);
-
 		boost::program_options::options_description options("Usage");
 		options.add_options()
 			("gridGraph", boost::program_options::value<int>(), "(int) The dimension of the square grid graph to use. Incompatible with graphFile and completeGraph. ")

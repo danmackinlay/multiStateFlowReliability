@@ -168,7 +168,7 @@ namespace multistateTurnip
 		
 		edgeDistances = boost::shared_array<int>(new int[nEdges * nEdges]);
 		int* edgeDistancePtr = edgeDistances.get();
-		memset(edgeDistancePtr, (int)(sizeof(int)*nEdges*nEdges), 0);
+		memset(edgeDistancePtr, 0, (int)(sizeof(int)*nEdges*nEdges));
 
 		Context::internalGraph::edge_iterator currentFirst, end;
 		boost::tie(currentFirst, end) = boost::edges(*graph);

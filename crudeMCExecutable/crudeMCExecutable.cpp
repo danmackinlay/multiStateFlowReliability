@@ -3,12 +3,11 @@
 #include "argumentsMPFR.h"
 #include "includeMPFR.h"
 #include <iostream>
+#include "crudeMC.h"
 namespace multistateTurnip
 {
 	int main(int argc, char **argv)
 	{
-		mpfr_set_default_prec(1024);
-
 		boost::program_options::options_description options("Usage");
 		options.add_options()
 			("gridGraph", boost::program_options::value<int>(), "(int) The dimension of the square grid graph to use. Incompatible with graphFile and completeGraph. ")
@@ -53,8 +52,6 @@ namespace multistateTurnip
 			std::cout << "Unable to parse threshold value" << std::endl;
 			return 0;
 		}
-		double thresholdD = (double)threshold;
-
 		capacityDistribution distribution;
 		std::string error;
 		mpfr_class originalMinFlow;
@@ -74,26 +71,13 @@ namespace multistateTurnip
 		{
 			return 0;
 		}
-
-		boost::mt19937 randomSource;
-		readSeed(variableMap, randomSource);
+		crudeMCArgs args(context);
+		readSeed(variableMap, args.randomSource);
+		args.n = n;
+		args.threshold = (double)newThreshold;
+		crudeMC(args);
 		
-		std::vector<double>& capacityVector = context.getCapacityVector();
-		std::size_t nEdges = context.getNEdges();
-		const Context::internalDirectedGraph& graph = context.getDirectedGraph();
-		const capacityDistribution& randomCapacityDistribution = context.getDistribution();
-
-		int count = 0;
-		for(int i = 0; i < n; i++)
-		{
-			for(std::size_t edgeCounter = 0; edgeCounter < nEdges; edgeCounter++)
-			{
-				capacityVector[2*edgeCounter] = capacityVector[2*edgeCounter + 1] = randomCapacityDistribution(randomSource);
-			}
-			double flow = context.getMaxFlow(capacityVector);
-			if(flow < thresholdD) count++;
-		}
-		std::cout << "Unreliability probability estimate was " << ((double)count / (double)n) << std::endl;
+		std::cout << "Unreliability probability estimate was " << ((double)args.count / (double)n) << std::endl;
 		return 0;
 	}
 }
