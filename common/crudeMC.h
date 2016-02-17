@@ -11,7 +11,7 @@ namespace multistateTurnip
 			:context(context)
 		{}
 		const Context& context;
-		mpfr_class threshold;
+		double threshold;
 		int n;
 		int count;
 		boost::mt19937 randomSource;

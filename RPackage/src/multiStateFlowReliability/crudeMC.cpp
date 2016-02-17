@@ -8,7 +8,7 @@ namespace multistateTurnip
 	SEXP crudeMC(SEXP graph, SEXP capacity, SEXP n_sexp, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, R_GRAPH_TYPE type)
 	{
 	BEGIN_RCPP
-		mpfr_class threshold;
+		double threshold;
 		try
 		{
 			threshold = Rcpp::as<double>(threshold_sexp);
@@ -50,7 +50,7 @@ namespace multistateTurnip
 		if(interestVertices.size() != 2) std::runtime_error("Input interestVertices must be a pair of numbers");
 
 		capacityDistribution distribution = createCapacityDistribution(capacity);
-		Context context = createContext(graph, std::move(distribution), interestVertices[0], interestVertices[1], threshold, type);
+		Context context = createContext(graph, std::move(distribution), interestVertices[0]-1, interestVertices[1]-1, threshold, type);
 
 		crudeMCArgs args(context);
 		args.randomSource.seed(seed);
@@ -58,7 +58,9 @@ namespace multistateTurnip
 		args.threshold = threshold;
 		crudeMC(args);
 
-		return Rcpp::wrap((double)args.count / (double)args.n);
+		mpfr_class count = args.count, n_mpfr = args.n;
+		mpfr_class result = count / n_mpfr;
+		return Rcpp::wrap(result.str());
 	END_RCPP
 	}
 	SEXP crudeMC_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp)

@@ -11,6 +11,8 @@ LazyData: No
 Suggests: graph, igraph
 Depends: Rmpfr
 Collate:
+	'classes.R'
+	'pmc.R'
 	'crudeMC.R'
 	'onLoad.R'
 	'Rcpp_exceptions.R'

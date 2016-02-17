@@ -119,6 +119,12 @@ namespace multistateTurnip
 		}
 
 		std::size_t nVertices = boost::num_vertices(*unorderedGraph);
+		int minVertexIndex = *std::min_element(interestVertices->begin(), interestVertices->end());
+		int maxVertexIndex = *std::max_element(interestVertices->begin(), interestVertices->end());
+		if(minVertexIndex < 0 || maxVertexIndex >= nVertices)
+		{
+			throw std::runtime_error("Input interestVertices was out of range");
+		}
 		nEdges = boost::num_edges(*unorderedGraph);
 		
 		edgeResidualCapacityVector.resize(2*nEdges);

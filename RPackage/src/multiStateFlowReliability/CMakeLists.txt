@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-set(CppFiles crudeMC.cpp createCapacityDistribution.cpp createContext.cpp convertGraphNEL.cpp convertGraphAM.cpp convertGraphIGraph.cpp convertGraph.cpp register.cpp)
+set(CppFiles crudeMC.cpp createCapacityDistribution.cpp createContext.cpp convertGraphNEL.cpp convertGraphAM.cpp convertGraphIGraph.cpp convertGraph.cpp register.cpp PMC.cpp)
 set(HeaderFiles createCapacityDistribution.h createContext.h convertGraph.h)
 add_library(multiStateFlowReliabilityRPackage SHARED ${CppFiles} ${HeaderFiles})
 target_link_libraries(multiStateFlowReliabilityRPackage PUBLIC multiStateCommon Rcpp)
