@@ -6,11 +6,17 @@
 #include <boost/random/exponential_distribution.hpp>
 namespace multistateTurnip
 {
+	struct edgeRepairData
+	{
+		int parallelEdgeIndex;
+		double time;
+		mpfr_class rate;
+	};
 	namespace pmcPrivate
 	{
-		bool secondArgumentSorter(const std::pair<int, double>& first, const std::pair<int, double>& second)
+		bool timeSorter(const edgeRepairData& first, const edgeRepairData& second)
 		{
-			return first.second < second.second;
+			return first.time < second.time;
 		}
 	}
 	void pmc(pmcArgs& args)
@@ -20,7 +26,7 @@ namespace multistateTurnip
 		std::size_t nLevels = distribution.getData().size();
 		std::size_t nParallelEdges = args.context.getNEdges() * (nLevels-1);
 
-		//Describe all the parrallel edges - In terms of the rate of that parallel edge, 
+		//Describe all the parallel edges - In terms of the rate of that parallel edge, 
 		//which original edge it belongs to, and which index of parallel edge it is among all the parallel edges 
 		//for that original edge
 		std::vector<int> originalEdgeIndex;
@@ -51,84 +57,91 @@ namespace multistateTurnip
 		//This stores the rates that go into the matrix exponential computation
 		std::vector<mpfr_class> ratesForPMC;
 		//Repair time vector
-		std::vector<std::pair<int, double> > repairTimes;
-		repairTimes.resize(nParallelEdges);
-		//The edges which have already been seen. This is used to exclude edges which become redundant. 
-		std::vector<bool> alreadySeen(nParallelEdges);
+		std::vector<edgeRepairData> repairTimes;
+		repairTimes.reserve(nParallelEdges);
+
+		//We store the per edge repair times seperately to start with, for the purposes of stripping out stuff that's not going to be important
+		std::vector<double> perEdgeRepairTimes(nLevels - 1);
+
 		//Only warn about stability once
 		bool warnedStability = false;
 		std::vector<mpfr_class> computeConditionalProbScratch;
 		for(int i = 0; i < args.n; i++)
 		{
-			//Simulate permutation
-			for(int j = 0; j < (int)nParallelEdges; j++)
+			repairTimes.clear();
+			//Simulate permutation via the repair times
+			for(int k = 0; k < (int)args.context.getNEdges(); k++)
 			{
-				boost::exponential_distribution<> repairDist(originalRates[j]);
-				repairTimes[j].second = repairDist(args.randomSource);
-				repairTimes[j].first = j;
+				for(int j = 0; j < (int)nLevels - 1; j++)
+				{
+					boost::exponential_distribution<> repairDist(originalRates[k*(nLevels - 1) + j]);
+					perEdgeRepairTimes[j] = repairDist(args.randomSource);
+				}
+				//The increase to highest capacity definitely occurs.
+				edgeRepairData highest;
+				highest.time = perEdgeRepairTimes[nLevels - 2];
+				highest.rate = originalRatesExact[k*(nLevels - 1) + nLevels - 2];
+				highest.parallelEdgeIndex = k*(nLevels - 1) + nLevels - 2;
+				repairTimes.push_back(highest);
+
+				edgeRepairData* minRepairTime = &*repairTimes.rbegin();
+				for(int j = (int)nLevels - 3; j >= 0; j--)
+				{
+					if(perEdgeRepairTimes[j] > minRepairTime->time)
+					{
+						minRepairTime->rate += originalRatesExact[k*(nLevels - 1) + j];
+					}
+					else
+					{
+						edgeRepairData time;
+						time.time = perEdgeRepairTimes[j];
+						time.parallelEdgeIndex = k*(nLevels - 1) + j;
+						time.rate = originalRatesExact[k*(nLevels - 1) + j];
+						repairTimes.push_back(time);
+						minRepairTime = &*repairTimes.rbegin();
+					}
+				}
 			}
-			std::sort(repairTimes.begin(), repairTimes.end(), pmcPrivate::secondArgumentSorter);
-			//No edges have yet been seen
-			std::fill(alreadySeen.begin(), alreadySeen.end(), false);
+			std::sort(repairTimes.begin(), repairTimes.end(), pmcPrivate::timeSorter);
 			//The first rate is going to be this
 			mpfr_class currentRate = sumAllRates;
 			//which edge in the permutation are we currently looking at?
-			int permutationCounter = 0;
+			std::vector<edgeRepairData>::iterator repairTimeIterator = repairTimes.begin();
 			//have we reached the point where we've got sufficient flow?
 			bool insufficientFlow = true;
 			//these are going to be the rates for the matrix exponential
 			ratesForPMC.clear();
 			//The capacities are initially zero
 			std::fill(capacityVector.begin(), capacityVector.end(), 0);
-			while(insufficientFlow)
+			while(insufficientFlow && repairTimeIterator != repairTimes.end())
 			{
 				//get out the parallel edge index
-				int parallelEdgeIndex = repairTimes[permutationCounter].first;
+				int parallelEdgeIndex = repairTimeIterator->parallelEdgeIndex;
 				//Which original edge does this correspond to?
 				int originalEdgeIndexThisLoop = originalEdgeIndex[parallelEdgeIndex];
-				//If we're using the partial turnip option this edge might have been discounted already
-				//because it doesn't add anything to the maximum flow
-				if(!alreadySeen[parallelEdgeIndex])
-				{
-					//Increase the capacity
-					capacityVector[2 * originalEdgeIndexThisLoop] = capacityVector[2 * originalEdgeIndexThisLoop + 1] = std::max(capacityVector[2 * originalEdgeIndexThisLoop + 1], (cumulativeData.rbegin() + originalEdgeLevel[parallelEdgeIndex])->first);
-					//determine whether or not we've hit the critical threshold
-					double currentFlow = args.context.getMaxFlow(capacityVector);
-					insufficientFlow = args.threshold > currentFlow;
-					//Add the current rate
-					ratesForPMC.push_back(currentRate);
-					if(args.useTurnip)
-					{
-						//Start going back through the other parallel edges for this original edge
-						//if they hadn't already been observed to occur, adjust the rate to indicate that we don't need them.
-						do
-						{
-							if(originalEdgeIndex[parallelEdgeIndex] != originalEdgeIndexThisLoop) break;
-							if(!alreadySeen[parallelEdgeIndex]) 
-							{
-								currentRate -= originalRates[parallelEdgeIndex];
-								alreadySeen[parallelEdgeIndex] = true;
-							}
-							parallelEdgeIndex++;
-						}
-						while(parallelEdgeIndex >= 0 && parallelEdgeIndex < (int)nParallelEdges);
-					}
-					else
-					{
-						currentRate -= originalRates[parallelEdgeIndex];
-						alreadySeen[parallelEdgeIndex] = true;
-					}
-				}
-				permutationCounter++;
+				//Increase the capacity
+				capacityVector[2 * originalEdgeIndexThisLoop] = capacityVector[2 * originalEdgeIndexThisLoop + 1] = std::max(capacityVector[2 * originalEdgeIndexThisLoop + 1], (cumulativeData.rbegin() + originalEdgeLevel[parallelEdgeIndex])->first);
+				//determine whether or not we've hit the critical threshold
+				double currentFlow = args.context.getMaxFlow(capacityVector);
+				insufficientFlow = args.threshold > currentFlow;
+				//Add the current rate
+				ratesForPMC.push_back(currentRate);
+				currentRate -= repairTimeIterator->rate;
+				repairTimeIterator++;
 			}
-			mpfr_class additionalPart = computeConditionalProb(ratesForPMC, computeConditionalProbScratch);
-			//mpfr_class additionalPart2 = computeConditionalProb(ratesForPMC);
-			if(additionalPart > 1 && !warnedStability)
+			mpfr_class additionalPart;
+			if(repairTimeIterator != repairTimes.end())
 			{
-				std::string output = "Numerical stability problem detected";
-				args.outputFunc(output);
-				warnedStability = true;
+				additionalPart = computeConditionalProb(ratesForPMC, computeConditionalProbScratch);
+				//mpfr_class additionalPart2 = computeConditionalProb(ratesForPMC);
+				if(additionalPart > 1 && !warnedStability)
+				{
+					std::string output = "Numerical stability problem detected";
+					args.outputFunc(output);
+					warnedStability = true;
+				}
 			}
+			else additionalPart = 1;
 			sumConditional += additionalPart;
 			sumSquaredConditional += additionalPart*additionalPart;
 		}

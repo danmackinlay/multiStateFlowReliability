@@ -17,7 +17,6 @@ namespace multistateTurnip
 			("threshold", boost::program_options::value<std::string>(), "(float) The threshold flow between the source and sink")
 			("n", boost::program_options::value<int>(), "(int) The number of simulations to perform. ")
 			("seed", boost::program_options::value<int>(), "(int) The random seed used to generate the random graphs. ")
-			("turnip", "(Flag) Should we make turnip-style optimisations?")
 			("interestVertices", boost::program_options::value<std::vector<int> >()->multitoken(), "(int) The vertices of interest, that should be connected. ")
 			("help", "Display this message");
 		
@@ -40,7 +39,6 @@ namespace multistateTurnip
 			std::cout << options << std::endl;
 			return 0;
 		}
-		bool useTurnip = variableMap.count("turnip") > 0;
 		int n;
 		if(!readN(variableMap, n))
 		{
@@ -84,7 +82,6 @@ namespace multistateTurnip
 		pmcArgs arguments(context);
 		readSeed(variableMap, arguments.randomSource);
 		arguments.n = n;
-		arguments.useTurnip = useTurnip;
 		arguments.threshold = newThresholdD;
 		arguments.outputFunc = [](std::string& input){std::cout << input << std::endl;};
 		pmc(arguments);

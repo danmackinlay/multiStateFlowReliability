@@ -103,7 +103,7 @@ namespace multistateTurnip
 			std::fill(capacityVector.begin(), capacityVector.end(), 0);
 			//Counter used to make sure we only call the all-points max flow once for every fixed number of steps
 			int allPointsMaxFlowCounter = 1;
-			while(insufficientFlow)
+			while(insufficientFlow && permutationCounter < nParallelEdges)
 			{
 				//get out the parallel edge index
 				int parallelEdgeIndex = repairTimes[permutationCounter].first;
@@ -182,12 +182,17 @@ namespace multistateTurnip
 				}
 				permutationCounter++;
 			}
-			mpfr_class additionalPart = computeConditionalProb(ratesForPMC);
-			if(additionalPart > 1 && !warnedStability)
+			mpfr_class additionalPart;
+			if(permutationCounter < nParallelEdges)
 			{
-				std::cout << "Numerical stability problem detected" << std::endl;
-				warnedStability = true;
+				additionalPart = computeConditionalProb(ratesForPMC);
+				if(additionalPart > 1 && !warnedStability)
+				{
+					std::cout << "Numerical stability problem detected" << std::endl;
+					warnedStability = true;
+				}
 			}
+			else additionalPart = 1;
 			sumConditional += additionalPart;
 			sumSquaredConditional += additionalPart*additionalPart;
 		}

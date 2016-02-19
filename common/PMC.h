@@ -14,7 +14,6 @@ namespace multistateTurnip
 		const Context& context;
 		mpfr_class estimateFirstMoment, estimateSecondMoment, varianceEstimate, sqrtVarianceEstimate, relativeErrorEstimate;
 		int n;
-		bool useTurnip;
 		double threshold;
 		std::function<void(std::string&)> outputFunc;
 		boost::mt19937 randomSource;
