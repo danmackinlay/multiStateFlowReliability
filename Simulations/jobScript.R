@@ -31,12 +31,9 @@ if(graph == "dodecahedron")
 if(method == "crudeMC")
 {
 	result <- crudeMC(graph = graph, capacityMatrix = capacityMatrix, n = n, threshold = demand, seed = SCENARIO_INDEX, interestVertices = interestVertices) 
-} else if(method == "pmc1")
+} else if(method == "pmc")
 {
-	result <- pmc(graph = graph, capacityMatrix = capacityMatrix, n = n, threshold = demand, seed = SCENARIO_INDEX, interestVertices = interestVertices, removeRedundant = FALSE)
-} else if(method == "pmc2")
-{
-	result <- pmc(graph = graph, capacityMatrix = capacityMatrix, n = n, threshold = demand, seed = SCENARIO_INDEX, interestVertices = interestVertices, removeRedundant = TRUE)
+	result <- pmc(graph = graph, capacityMatrix = capacityMatrix, n = n, threshold = demand, seed = SCENARIO_INDEX, interestVertices = interestVertices)
 } else if(method == "turnipSingle")
 {
 	result <- turnip(graph = graph, capacityMatrix = capacityMatrix, n = n, threshold = demand, seed = SCENARIO_INDEX, interestVertices = interestVertices, useAllPointsMaxFlow = FALSE)
