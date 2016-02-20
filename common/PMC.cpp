@@ -6,14 +6,14 @@
 #include <boost/random/exponential_distribution.hpp>
 namespace multistateTurnip
 {
-	struct edgeRepairData
-	{
-		int parallelEdgeIndex;
-		double time;
-		mpfr_class rate;
-	};
 	namespace pmcPrivate
 	{
+		struct edgeRepairData
+		{
+			int parallelEdgeIndex;
+			double time;
+			mpfr_class rate;
+		};
 		bool timeSorter(const edgeRepairData& first, const edgeRepairData& second)
 		{
 			return first.time < second.time;
@@ -57,7 +57,7 @@ namespace multistateTurnip
 		//This stores the rates that go into the matrix exponential computation
 		std::vector<mpfr_class> ratesForPMC;
 		//Repair time vector
-		std::vector<edgeRepairData> repairTimes;
+		std::vector<pmcPrivate::edgeRepairData> repairTimes;
 		repairTimes.reserve(nParallelEdges);
 
 		//We store the per edge repair times seperately to start with, for the purposes of stripping out stuff that's not going to be important
@@ -78,13 +78,13 @@ namespace multistateTurnip
 					perEdgeRepairTimes[j] = repairDist(args.randomSource);
 				}
 				//The increase to highest capacity definitely occurs.
-				edgeRepairData highest;
+				pmcPrivate::edgeRepairData highest;
 				highest.time = perEdgeRepairTimes[nLevels - 2];
 				highest.rate = originalRatesExact[k*(nLevels - 1) + nLevels - 2];
 				highest.parallelEdgeIndex = k*(nLevels - 1) + nLevels - 2;
 				repairTimes.push_back(highest);
 
-				edgeRepairData* minRepairTime = &*repairTimes.rbegin();
+				pmcPrivate::edgeRepairData* minRepairTime = &*repairTimes.rbegin();
 				for(int j = (int)nLevels - 3; j >= 0; j--)
 				{
 					if(perEdgeRepairTimes[j] > minRepairTime->time)
@@ -93,7 +93,7 @@ namespace multistateTurnip
 					}
 					else
 					{
-						edgeRepairData time;
+						pmcPrivate::edgeRepairData time;
 						time.time = perEdgeRepairTimes[j];
 						time.parallelEdgeIndex = k*(nLevels - 1) + j;
 						time.rate = originalRatesExact[k*(nLevels - 1) + j];
@@ -106,7 +106,7 @@ namespace multistateTurnip
 			//The first rate is going to be this
 			mpfr_class currentRate = sumAllRates;
 			//which edge in the permutation are we currently looking at?
-			std::vector<edgeRepairData>::iterator repairTimeIterator = repairTimes.begin();
+			std::vector<pmcPrivate::edgeRepairData>::iterator repairTimeIterator = repairTimes.begin();
 			//have we reached the point where we've got sufficient flow?
 			bool insufficientFlow = true;
 			//these are going to be the rates for the matrix exponential
