@@ -213,7 +213,7 @@ namespace multistateTurnip
 				repairTimeIterator++;
 			}
 			mpfr_class additionalPart;
-			if(repairTimeIterator != repairTimes.end())
+			if(!insufficientFlow)
 			{
 				additionalPart = computeConditionalProb(ratesForPMC, computeConditionalProbScratch);
 				if(additionalPart > 1 && !warnedStability)
