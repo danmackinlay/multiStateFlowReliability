@@ -105,13 +105,13 @@ namespace multistateTurnip
 				}
 				//The increase to highest capacity definitely occurs.
 				turnipPrivate::edgeRepairData highest;
-				highest.time = perEdgeRepairTimes[nLevels - 2];
-				highest.rate = originalRatesExact[k*(nLevels - 1) + nLevels - 2];
-				highest.parallelEdgeIndex = k*(nLevels - 1) + nLevels - 2;
+				highest.time = perEdgeRepairTimes[0];
+				highest.rate = originalRatesExact[k*(nLevels - 1) + 0];
+				highest.parallelEdgeIndex = k*(nLevels - 1) + 0;
 				repairTimes.push_back(highest);
 				
 				turnipPrivate::edgeRepairData* minRepairTime = &*repairTimes.rbegin();
-				for(int j = (int)nLevels - 3; j >= 0; j--)
+				for(int j = 1; j < (int)nLevels - 1; j++)
 				{
 					if(perEdgeRepairTimes[j] > minRepairTime->time)
 					{

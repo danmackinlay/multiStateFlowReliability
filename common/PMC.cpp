@@ -79,13 +79,13 @@ namespace multistateTurnip
 				}
 				//The increase to highest capacity definitely occurs.
 				pmcPrivate::edgeRepairData highest;
-				highest.time = perEdgeRepairTimes[nLevels - 2];
-				highest.rate = originalRatesExact[k*(nLevels - 1) + nLevels - 2];
-				highest.parallelEdgeIndex = k*(nLevels - 1) + nLevels - 2;
+				highest.time = perEdgeRepairTimes[0];
+				highest.rate = originalRatesExact[k*(nLevels - 1) + 0];
+				highest.parallelEdgeIndex = k*(nLevels - 1) + 0;
 				repairTimes.push_back(highest);
 
-				pmcPrivate::edgeRepairData* minRepairTime = &*repairTimes.rbegin();
-				for(int j = (int)nLevels - 3; j >= 0; j--)
+				pmcPrivate::edgeRepairData* minRepairTime = &repairTimes.back();
+				for(int j = 1; j < (int)nLevels - 1; j++)
 				{
 					if(perEdgeRepairTimes[j] > minRepairTime->time)
 					{
@@ -98,7 +98,7 @@ namespace multistateTurnip
 						time.parallelEdgeIndex = k*(nLevels - 1) + j;
 						time.rate = originalRatesExact[k*(nLevels - 1) + j];
 						repairTimes.push_back(time);
-						minRepairTime = &*repairTimes.rbegin();
+						minRepairTime = &repairTimes.back();
 					}
 				}
 			}
