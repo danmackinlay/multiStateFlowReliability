@@ -5,7 +5,7 @@
 #include "convertGraph.h"
 namespace multistateTurnip
 {
-	SEXP pmc(SEXP graph, SEXP capacity, SEXP n_sexp, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, R_GRAPH_TYPE type)
+	SEXP pmc(SEXP graph, SEXP capacity, SEXP n_sexp, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, R_GRAPH_TYPE type)
 	{
 	BEGIN_RCPP
 		double threshold;
@@ -47,7 +47,33 @@ namespace multistateTurnip
 		{
 			throw std::runtime_error("Input seed must be an integer");
 		}
+
+		bool verbose;
+		try
+		{
+			verbose = Rcpp::as<bool>(verbose_sexp);
+		}
+		catch(...)
+		{
+			throw std::runtime_error("Input verbose must be a boolean");
+		}
 		if(interestVertices.size() != 2) std::runtime_error("Input interestVertices must be a pair of numbers");
+
+		Rcpp::RObject barHandle;
+		Rcpp::Function txtProgressBar("txtProgressBar"), setTxtProgressBar("setTxtProgressBar"), close("close");
+		std::function<void(unsigned long, unsigned long)> progressFunction = [](unsigned long, unsigned long){};
+		if(verbose)
+		{
+			barHandle = txtProgressBar(Rcpp::Named("style") = 3, Rcpp::Named("min") = 0, Rcpp::Named("max") = 1000, Rcpp::Named("initial") = 0);
+			progressFunction = [barHandle, setTxtProgressBar](unsigned long done, unsigned long totalSteps)
+			{
+				try
+				{
+					setTxtProgressBar.topLevelExec(barHandle, (int)((double)(1000*done) / (double)totalSteps));
+				}
+				catch(...){}
+			};
+		}
 
 		capacityDistribution distribution = createCapacityDistribution(capacity);
 		Context context = createContext(graph, std::move(distribution), interestVertices[0]-1, interestVertices[1]-1, threshold, type);
@@ -57,23 +83,29 @@ namespace multistateTurnip
 		args.n = n;
 		args.threshold = threshold;
 		args.outputFunc = [](std::string& output){Rcpp::Rcout << output << std::endl;};
+		args.progressFunction = progressFunction;
 		pmc(args);
+
+		if(verbose)
+		{
+			close(barHandle);
+		}
 
 		std::string estimateFirstMomentStr = args.estimateFirstMoment.str(), estimateSecondMomentStr = args.estimateSecondMoment.str(), varianceEstimateStr = args.varianceEstimate.str(), sqrtVarianceEstimateStr = args.sqrtVarianceEstimate.str(), relativeErrorEstimateStr = args.relativeErrorEstimate.str();
 		return Rcpp::List::create(Rcpp::Named("estimateFirstMoment") = estimateFirstMomentStr, Rcpp::Named("estimateSecondMoment") = estimateSecondMomentStr, Rcpp::Named("varianceEstimate") = varianceEstimateStr, Rcpp::Named("sqrtVarianceEstimate") = sqrtVarianceEstimateStr, Rcpp::Named("relativeErrorEstimate") = relativeErrorEstimateStr);
 	END_RCPP
 	}
-	SEXP pmc_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp)
+	SEXP pmc_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp)
 	{
-		return pmc(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, IGRAPH);
+		return pmc(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, verbose_sexp, IGRAPH);
 	}
-	SEXP pmc_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp)
+	SEXP pmc_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp)
 	{
-		return pmc(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, GRAPHAM);
+		return pmc(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, verbose_sexp, GRAPHAM);
 	}
-	SEXP pmc_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp)
+	SEXP pmc_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp)
 	{
-		return pmc(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, GRAPHNEL);
+		return pmc(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, verbose_sexp, GRAPHNEL);
 	}
 
 }

@@ -144,6 +144,10 @@ namespace multistateTurnip
 			else additionalPart = 1;
 			sumConditional += additionalPart;
 			sumSquaredConditional += additionalPart*additionalPart;
+			if(i % 100 == 0)
+			{
+				args.progressFunction(i, args.n);
+			}
 		}
 		args.estimateFirstMoment = sumConditional/args.n;
 		args.estimateSecondMoment = sumSquaredConditional/args.n;

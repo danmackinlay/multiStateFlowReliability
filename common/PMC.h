@@ -17,6 +17,7 @@ namespace multistateTurnip
 		double threshold;
 		std::function<void(std::string&)> outputFunc;
 		boost::mt19937 randomSource;
+		std::function<void(unsigned long, unsigned long)> progressFunction;
 	};
 	void pmc(pmcArgs& args);
 }

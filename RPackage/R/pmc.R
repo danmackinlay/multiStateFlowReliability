@@ -1,4 +1,4 @@
-pmc <- function(graph, capacityMatrix, n, threshold, seed, interestVertices)
+pmc <- function(graph, capacityMatrix, n, threshold, seed, interestVertices, verbose=FALSE)
 {
 	if(class(graph) == "igraph")
 	{
@@ -7,19 +7,19 @@ pmc <- function(graph, capacityMatrix, n, threshold, seed, interestVertices)
 			stop("Input `graph' must be undirected")
 		}
 		start <- Sys.time()
-		result <- .Call("pmc_igraph", graph, capacityMatrix, n, threshold, seed, interestVertices, PACKAGE="multiStateFlowReliability")
+		result <- .Call("pmc_igraph", graph, capacityMatrix, n, threshold, seed, interestVertices, verbose, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()
 	}
 	else if(class(graph) == "graphNEL")
 	{
 		start <- Sys.time()
-		result <- .Call("pmc_graphNEL", graph, capacityMatrix, n, threshold, seed, interestVertices, PACKAGE="multiStateFlowReliability")
+		result <- .Call("pmc_graphNEL", graph, capacityMatrix, n, threshold, seed, interestVertices, verbose, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()
 	}
 	else if(class(graph) == "graphAM")
 	{
 		start <- Sys.time()
-		result <- .Call("pmc_graphAM", graph, capacityMatrix, n, threshold, seed, interestVertices, PACKAGE="multiStateFlowReliability")
+		result <- .Call("pmc_graphAM", graph, capacityMatrix, n, threshold, seed, interestVertices, verbose, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()
 	}
 	else
