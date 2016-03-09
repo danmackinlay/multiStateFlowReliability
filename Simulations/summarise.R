@@ -1,29 +1,51 @@
 source("./generateScenarios.R")
-results <- list()
+allResults <- list()
 for(i in 1:nrow(scenarios))
 {
-	load(file.path("results", scenarios[i, "file"]))
-	results[[i]] <- result
+	path <- file.path("results", scenarios[i, "file"])
+	if(file.exists(path))
+	{
+		load(path)
+		allResults[[i]] <- results
+	}
 }
-times <- unlist(lapply(results, function(x) difftime(x@end, x@start, units = "secs")))
-timeSingleSample <- times / unlist(lapply(results, function(x) x@n))
+secondsPerRun <- lapply(allResults, function(x) unlist(lapply(x, function(y) difftime(y@end, y@start, units = "secs"))))
+averageSecondsPerRun <- unlist(lapply(secondsPerRun, function(x) if(is.null(x)) NA else mean(x)))
+secondsSingleSample <- unlist(lapply(allResults, function(x) if(is.null(x)) NA else mean(unlist(lapply(x, function(y) difftime(y@end, y@start, units = "secs")/y@n)))))
 
 averageEstimatesFunc <- function(x)
 {
-	if(class(x) == "crudeMCResult") x@data
-	else x@estimateFirstMoment
+	if(is.null(x))
+	{
+		return(NA)
+	}
+	if(class(x[[1]]) == "crudeMCResult") 
+	{
+		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@data)))))
+	}
+	else 
+	{
+		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@estimateFirstMoment)))))
+	}
 }
-averageEstimates <- do.call(c, lapply(results, averageEstimatesFunc))
+averageEstimates <- do.call(c, lapply(allResults, averageEstimatesFunc))
 
 varianceSingleSampleFunc <- function(x)
 {
-	if(class(x) == "crudeMCResult") x@data*(1 - x@data)
-	else x@varianceEstimate
+	if(is.null(x))
+	{
+		return(NA)
+	}
+	if(class(x[[1]]) == "crudeMCResult")
+	{
+		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@data*(1 - y@data))))))
+	}
+	else 
+	{
+		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@varianceEstimate)))))
+	}
 }
-varianceSingleSample <- do.call(c, lapply(results, varianceSingleSampleFunc))
+varianceSingleSample <- do.call(c, lapply(allResults, varianceSingleSampleFunc))
+workNormalizedSingleSampleVariance <- as.numeric(varianceSingleSample * secondsSingleSample)
 
-workNormalizedSingleSampleVariance <- as.numeric(varianceSingleSample * timeSingleSample)
-averageEstimates <- as.numeric(averageEstimates)
-varianceSingleSample <- as.numeric(varianceSingleSample)
-
-save(results, timeSingleSample, varianceSingleSample, workNormalizedSingleSampleVariance, averageEstimates, times, file = "summarised.RData")
+save(allResults, secondsSingleSample, varianceSingleSample, workNormalizedSingleSampleVariance, averageEstimates, averageSecondsPerRun, secondsPerRun, file = "summarised.RData")
