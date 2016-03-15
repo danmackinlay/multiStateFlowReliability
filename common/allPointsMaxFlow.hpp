@@ -4,8 +4,9 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/boykov_kolmogorov_max_flow.hpp>
-#include <boost/graph/depth_first_search.hpp>
+#include <boost/graph/undirected_dfs.hpp>
 #include <boost/iterator/counting_iterator.hpp>
+#include "custom_dfs.hpp"
 namespace allPointsMaxFlow
 {
 	template<class inputGraph, typename flowType = double> struct flowPredicate
@@ -35,138 +36,110 @@ namespace allPointsMaxFlow
 		typedef boost::iterator_property_map<typename std::vector<flowType>::const_iterator, edgeIndexMapType> edgeCapacityMapType;
 		typedef boost::iterator_property_map<typename std::vector<flowType>::iterator, edgeIndexMapType> edgeResidualCapacityMapType;
 		typedef boost::iterator_property_map<typename std::vector<typename inputGraph::edge_descriptor>::iterator, vertexIndexMapType> vertexPredecessorMapType;
-		typedef boost::iterator_property_map<typename std::vector<boost::default_color_type>::iterator, vertexIndexMapType> colorMapType;
+		typedef boost::iterator_property_map<typename std::vector<boost::default_color_type>::iterator, vertexIndexMapType> vertexColorMapType;
+		typedef boost::iterator_property_map<typename std::vector<boost::default_color_type>::iterator, edgeIndexMapType> edgeColorMapType;
 		typedef boost::iterator_property_map<typename std::vector<int>::iterator, vertexIndexMapType> distanceMapType;
 		std::vector<flowType> edgeResidualCapacityVector;
 		std::vector<typename inputGraph::edge_descriptor> vertexPredecessorVector;
-		std::vector<boost::default_color_type> colorVector;
+		std::vector<boost::default_color_type> colorVector1;
+		std::vector<boost::default_color_type> colorVector2;
 		std::vector<int> distanceVector;
 
 		typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, boost::property<boost::edge_index_t, int, boost::property<boost::edge_weight_t, flowType> > > starGraphType;
-		typedef typename boost::property_map<starGraphType, boost::edge_index_t>::type starEdgeIndexMapType;
-		typedef typename boost::property_map<starGraphType, boost::edge_weight_t>::type starEdgeWeightMapType;
-		std::vector<std::vector<int> > scratchIntVectors;
+		typedef typename boost::property_map<starGraphType, boost::edge_index_t>::const_type starEdgeIndexMapType;
+		typedef typename boost::property_map<starGraphType, boost::vertex_index_t>::const_type starVertexIndexMapType;
+		typedef typename boost::property_map<starGraphType, boost::edge_weight_t>::const_type starEdgeWeightMapType;
+		typedef boost::iterator_property_map<typename std::vector<boost::default_color_type>::iterator, starVertexIndexMapType> starVertexColorMapType;
+		typedef boost::iterator_property_map<typename std::vector<boost::default_color_type>::iterator, starEdgeIndexMapType> starEdgeColorMapType;
 		
-		std::vector<bool> minimumEdgeSearchVertices;
-
 		typedef boost::filtered_graph<inputGraph, flowPredicate<inputGraph, flowType> > filteredGraph;
 		typedef typename boost::property_map<filteredGraph, boost::vertex_index_t>::const_type filteredVertexIndexMapType;
-		typedef boost::iterator_property_map<typename std::vector<boost::default_color_type>::iterator, filteredVertexIndexMapType> filteredColorMapType;
+		typedef typename boost::property_map<filteredGraph, boost::edge_index_t>::type filteredEdgeIndexMapType;
+		typedef boost::iterator_property_map<typename std::vector<boost::default_color_type>::iterator, filteredVertexIndexMapType> filteredVertexColorMapType;
+		typedef boost::iterator_property_map<typename std::vector<boost::default_color_type>::iterator, filteredEdgeIndexMapType> filteredEdgeColorMapType;
 	};
-	template<typename flowType = double> struct minimumEdgeWeightVisitorState
+	template<typename inputGraph, typename flowType = double> struct minimumEdgeWeightVisitorState
 	{
 	public:
-		minimumEdgeWeightVisitorState(std::vector<bool>& minimumEdgeSearchVertices)
-			:minimumEdgeSearchVertices(minimumEdgeSearchVertices), minimumEdgeIndex(-1), minimumWeight(std::numeric_limits<flowType>::max()), sourceVertex(-1), targetVertex(-1)
+		minimumEdgeWeightVisitorState(std::vector<flowType>& flowMatrix)
+			: flowMatrix(flowMatrix)
 		{}
-		std::vector<bool>& minimumEdgeSearchVertices;
-		int minimumEdgeIndex;
-		flowType minimumWeight;
-		int sourceVertex;
-		int targetVertex;
+		typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType::vertex_descriptor start;
+		std::vector<typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType::edge_descriptor> edges;
+		std::vector<flowType> minimumValues;
+		std::vector<flowType>& flowMatrix;
+		std::size_t nVertices;
 	};
 	template<class inputGraph, typename flowType> class minimumEdgeWeightVisitor : public boost::default_dfs_visitor
 	{
 	public:
-		minimumEdgeWeightVisitor(minimumEdgeWeightVisitorState<flowType>& stateRef)
+		minimumEdgeWeightVisitor(minimumEdgeWeightVisitorState<inputGraph, flowType>& stateRef)
 			:stateRef(stateRef)
 		{}
 		void tree_edge(const typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType::edge_descriptor& e, const typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType& star)
 		{
 			flowType currentEdgeWeight = boost::get(boost::edge_weight, star, e);
-			if (currentEdgeWeight < stateRef.minimumWeight && stateRef.minimumEdgeSearchVertices[e.m_source] && stateRef.minimumEdgeSearchVertices[e.m_target])
+			if(stateRef.minimumValues.size() == 0)
 			{
-				stateRef.minimumWeight = currentEdgeWeight;
-				stateRef.minimumEdgeIndex = boost::get(boost::edge_index, star, e);
-				stateRef.sourceVertex = (int)e.m_source;
-				stateRef.targetVertex = (int)e.m_target;
+				stateRef.minimumValues.push_back(currentEdgeWeight);
+				stateRef.edges.push_back(e);
+			}
+			else if (currentEdgeWeight < *stateRef.minimumValues.rbegin())
+			{
+				stateRef.minimumValues.push_back(currentEdgeWeight);
+				stateRef.edges.push_back(e);
+			}
+			if(e.m_target == stateRef.start) throw std::runtime_error("");
+			stateRef.flowMatrix[e.m_target + stateRef.nVertices * stateRef.start] = stateRef.flowMatrix[stateRef.start + stateRef.nVertices * e.m_target] = *stateRef.minimumValues.rbegin();
+		}
+		void finish_edge(const typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType::edge_descriptor e, const typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType& star)
+		{
+			if(stateRef.edges.size() == 0) return;
+			typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType::edge_descriptor top = *stateRef.edges.rbegin();
+			if(e == top || (e.m_target == top.m_source && e.m_source == top.m_target))
+			{
+				stateRef.edges.pop_back();
+				stateRef.minimumValues.pop_back();
 			}
 		}
 	private:
-		minimumEdgeWeightVisitorState<flowType>& stateRef;
+		minimumEdgeWeightVisitorState<inputGraph, flowType>& stateRef;
 	};
-	template<class inputGraph, typename flowType> void extractFlow(const typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType& tree, std::vector<flowType>& flowMatrix, std::vector<int>& currentVertices, allPointsMaxFlowScratch<inputGraph, flowType>& scratch)
+	template<class inputGraph, typename flowType> void extractFlow(const typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType& tree, std::vector<flowType>& flowMatrix, allPointsMaxFlowScratch<inputGraph, flowType>& scratch)
 	{
-		const std::size_t nVertices = scratch.colorVector.size();
-		if (currentVertices.size() == 2)
+		const std::size_t nVertices = boost::num_vertices(tree);
+		const std::size_t nEdges = boost::num_edges(tree);
+		scratch.colorVector1.resize(nVertices);
+		scratch.colorVector2.resize(nEdges);
+		if (nVertices == 2)
 		{
-			std::size_t vertexOne = currentVertices[0], vertexTwo = currentVertices[1];
-			typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType::out_edge_iterator current, end;
-			boost::tie(current, end) = boost::out_edges(vertexOne, tree);
-			while (current->m_target != vertexTwo)
-			{
-				current++;
-			}
-			flowMatrix[vertexOne + nVertices * vertexTwo] = flowMatrix[vertexTwo + nVertices * vertexOne] = boost::get(boost::edge_weight, tree, *current);
+			typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType::edge_iterator begin, end;
+			boost::tie(begin, end) = boost::edges(tree);
+			flowMatrix[1] = flowMatrix[2] = boost::get(boost::edge_weight, tree, *begin);
 		}
-		else if (currentVertices.size() == 1)
+		else if (nVertices < 2)
 		{
 			return;
 		}
-		else if (currentVertices.size() == 0)
-		{
-			throw std::runtime_error("This branch should be impossible");
-		}
-		typename allPointsMaxFlowScratch<inputGraph, flowType>::vertexIndexMapType vertexIndexMap = boost::get(boost::vertex_index, tree);
+		typename allPointsMaxFlowScratch<inputGraph, flowType>::starVertexIndexMapType vertexIndexMap = boost::get(boost::vertex_index, tree);
+		typename allPointsMaxFlowScratch<inputGraph, flowType>::starEdgeIndexMapType edgeIndexMap = boost::get(boost::edge_index, tree);
 
 		//Identify the minimum weight edge between any pair of vertices in currentVertices
-		std::fill(scratch.colorVector.begin(), scratch.colorVector.end(), boost::black_color);
-		scratch.minimumEdgeSearchVertices.resize(nVertices);
-		std::fill(scratch.minimumEdgeSearchVertices.begin(), scratch.minimumEdgeSearchVertices.end(), false);
-		for (std::size_t i = 0; i < currentVertices.size(); i++)
+		typename allPointsMaxFlowScratch<inputGraph, flowType>::starVertexColorMapType vertexColorMap(scratch.colorVector1.begin(), vertexIndexMap);
+		typename allPointsMaxFlowScratch<inputGraph, flowType>::starEdgeColorMapType edgeColorMap(scratch.colorVector2.begin(), edgeIndexMap);
+		minimumEdgeWeightVisitorState<typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType, flowType> visitorState(flowMatrix);
+		visitorState.nVertices = nVertices;
+		minimumEdgeWeightVisitor<typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType, flowType> visitor(visitorState);
+		typename allPointsMaxFlowScratch<inputGraph, flowType>::starGraphType::vertex_iterator current, end;
+		boost::tie(current, end) = boost::vertices(tree);
+		for(; current != end; current++)
 		{
-			scratch.colorVector[currentVertices[i]] = boost::white_color;
-			scratch.minimumEdgeSearchVertices[currentVertices[i]] = true;
+			if(visitorState.edges.size() > 0 || visitorState.minimumValues.size() > 0) throw std::runtime_error("Internal error");
+			visitorState.start = *current;
+			std::fill(scratch.colorVector1.begin() + *current, scratch.colorVector1.end(), boost::white_color);
+			std::fill(scratch.colorVector2.begin(), scratch.colorVector2.end(), boost::white_color);
+			boost::custom_undirected_dfs(tree, visitor, vertexColorMap, edgeColorMap, *current);
 		}
-		typename allPointsMaxFlowScratch<inputGraph, flowType>::colorMapType colorMap(scratch.colorVector.begin(), vertexIndexMap);
-		minimumEdgeWeightVisitorState<flowType> visitorState(scratch.minimumEdgeSearchVertices);
-		minimumEdgeWeightVisitor<inputGraph, flowType> visitor(visitorState);
-		boost::depth_first_search(tree, visitor, colorMap, currentVertices[0]);
-
-		//get out the two vertices of that edge
-		int targetVertex = visitorState.targetVertex;
-		int sourceVertex = visitorState.sourceVertex;
-		flowType minimumWeight = visitorState.minimumWeight;
-		//Identify all vertices on one side or the other.
-		std::fill(scratch.colorVector.begin(), scratch.colorVector.end(), boost::white_color);
-		scratch.colorVector[sourceVertex] = scratch.colorVector[targetVertex] = boost::black_color;
-		boost::detail::depth_first_visit_impl(tree, sourceVertex, visitor, colorMap, boost::detail::nontruth2());
-		scratch.colorVector[targetVertex] = boost::white_color;
-
-		//get out vertices on both sides of the bottleneck
-		std::vector<int> sideOne, sideTwo;
-		if (scratch.scratchIntVectors.size() > 0)
-		{
-			sideOne = std::move(*scratch.scratchIntVectors.rbegin());
-			scratch.scratchIntVectors.pop_back();
-		}
-		if (scratch.scratchIntVectors.size() > 0)
-		{
-			sideTwo = std::move(*scratch.scratchIntVectors.rbegin());
-			scratch.scratchIntVectors.pop_back();
-		}
-		sideOne.clear();
-		sideTwo.clear();
-
-		for (std::size_t i = 0; i < currentVertices.size(); i++)
-		{
-			if (scratch.colorVector[currentVertices[i]] == boost::white_color)
-			{
-				sideOne.push_back(currentVertices[i]);
-			}
-			else sideTwo.push_back(currentVertices[i]);
-			for (std::size_t j = i + 1; j < currentVertices.size(); j++)
-			{
-				if (scratch.colorVector[currentVertices[i]] != scratch.colorVector[currentVertices[j]])
-				{
-					flowMatrix[currentVertices[i] + currentVertices[j] * nVertices] = flowMatrix[currentVertices[j] + currentVertices[i]*nVertices] = minimumWeight;
-				}
-			}
-		}
-		extractFlow(tree, flowMatrix, sideOne, scratch);
-		extractFlow(tree, flowMatrix, sideTwo, scratch);
-		scratch.scratchIntVectors.push_back(std::move(sideOne));
-		scratch.scratchIntVectors.push_back(std::move(sideTwo));
 	}
 	template<class inputGraph, typename flowType> void allPointsMaxFlow(std::vector<flowType>& flowMatrix, const std::vector<flowType>& capacities, const inputGraph& graph, allPointsMaxFlowScratch<inputGraph, flowType>& scratch)
 	{
@@ -175,7 +148,8 @@ namespace allPointsMaxFlow
 		//scratch data for max flow algorithm
 		scratch.edgeResidualCapacityVector.resize(nEdges);
 		scratch.vertexPredecessorVector.resize(nEdges);
-		scratch.colorVector.resize(nVertices);
+		scratch.colorVector1.resize(nVertices);
+		scratch.colorVector2.resize(nEdges);
 		scratch.distanceVector.resize(nVertices);
 
 		typename allPointsMaxFlowScratch<inputGraph, flowType>::edgeIndexMapType edgeIndexMap = boost::get(boost::edge_index, graph);
@@ -183,7 +157,7 @@ namespace allPointsMaxFlow
 		typename allPointsMaxFlowScratch<inputGraph, flowType>::edgeResidualCapacityMapType residualCapacityMap(scratch.edgeResidualCapacityVector.begin(), edgeIndexMap);
 		typename allPointsMaxFlowScratch<inputGraph, flowType>::edgeCapacityMapType edgeCapacityMap(capacities.begin(), edgeIndexMap);
 		typename allPointsMaxFlowScratch<inputGraph, flowType>::vertexPredecessorMapType vertexPredecessorMap(scratch.vertexPredecessorVector.begin(), vertexIndexMap);
-		typename allPointsMaxFlowScratch<inputGraph, flowType>::colorMapType colorMap(scratch.colorVector.begin(), vertexIndexMap);
+		typename allPointsMaxFlowScratch<inputGraph, flowType>::vertexColorMapType colorMap(scratch.colorVector1.begin(), vertexIndexMap);
 		typename allPointsMaxFlowScratch<inputGraph, flowType>::distanceMapType distanceMap(scratch.distanceVector.begin(), vertexIndexMap);
 
 		//construct star graph
@@ -202,10 +176,13 @@ namespace allPointsMaxFlow
 			//get out the two components of graph which are seperated by the mincut we just found
 			typename allPointsMaxFlowScratch<inputGraph, flowType>::filteredGraph filtered(graph, flowPredicate<inputGraph, flowType>(graph, capacities, scratch.edgeResidualCapacityVector));
 			typename allPointsMaxFlowScratch<inputGraph, flowType>::filteredVertexIndexMapType filteredVertexMap = boost::get(boost::vertex_index, filtered);
-			typename allPointsMaxFlowScratch<inputGraph, flowType>::filteredColorMapType filteredColorMap(scratch.colorVector.begin(), filteredVertexMap);
-			std::fill(scratch.colorVector.begin(), scratch.colorVector.end(), boost::white_color);
+			typename allPointsMaxFlowScratch<inputGraph, flowType>::filteredEdgeIndexMapType filteredEdgeMap = boost::get(boost::edge_index, filtered);
+			typename allPointsMaxFlowScratch<inputGraph, flowType>::filteredVertexColorMapType filteredVertexColorMap(scratch.colorVector1.begin(), filteredVertexMap);
+			typename allPointsMaxFlowScratch<inputGraph, flowType>::filteredEdgeColorMapType filteredEdgeColorMap(scratch.colorVector2.begin(), filteredEdgeMap);
+			std::fill(scratch.colorVector1.begin(), scratch.colorVector1.end(), boost::white_color);
+			std::fill(scratch.colorVector2.begin(), scratch.colorVector2.end(), boost::white_color);
 			boost::dfs_visitor<boost::null_visitor> visitor = boost::make_dfs_visitor(boost::null_visitor());
-			boost::detail::depth_first_visit_impl(filtered, s, visitor, filteredColorMap, boost::detail::nontruth2());
+			boost::detail::undir_dfv_impl(filtered, s, visitor, filteredVertexColorMap, filteredEdgeColorMap);
 			//at this point the two components are white and black
 			for (std::size_t i = s + 1; i < nVertices; i++)
 			{
@@ -214,28 +191,23 @@ namespace allPointsMaxFlow
 				boost::tie(current, end) = boost::out_edges(i, star);
 				while (current != end)
 				{
-					if (current->m_target == t) isNeighbour = true;
+					if (current->m_target == t) 
+					{
+						isNeighbour = true;
+						break;
+					}
 					current++;
 				}
-				if (scratch.colorVector[i] == boost::black_color && isNeighbour)
+				if (scratch.colorVector1[i] == boost::black_color && isNeighbour)
 				{
-					boost::remove_edge(i, t, star);
-					boost::add_edge(i, s, star);
+					int oldEdgeIndex = boost::get(boost::edge_index, star, *current);
+					boost::remove_edge(*current, star);
+					boost::add_edge(i, s, oldEdgeIndex, star);
 				}
 			}
 		}
-		std::vector<int> allVertices;
-		if (scratch.scratchIntVectors.size() > 0)
-		{
-			allVertices = std::move(*scratch.scratchIntVectors.rbegin());
-			scratch.scratchIntVectors.pop_back();
-		}
-		allVertices.clear();
-		allVertices.insert(allVertices.begin(), boost::counting_iterator<int>(0), boost::counting_iterator<int>((int)nVertices));
-
-		extractFlow<inputGraph, flowType>(star, flowMatrix, allVertices, scratch);
-		
-		scratch.scratchIntVectors.push_back(std::move(allVertices));
+		std::fill(flowMatrix.begin(), flowMatrix.end(), std::numeric_limits<double>::infinity());
+		extractFlow<inputGraph, flowType>(star, flowMatrix, scratch);
 	}
 }
 #endif
