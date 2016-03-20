@@ -148,27 +148,26 @@ namespace boost {
     BOOST_CONCEPT_ASSERT(( DFSVisitorConcept<DFSVisitor, Graph> ));
     BOOST_CONCEPT_ASSERT(( EdgeListGraphConcept<Graph> ));
 
-    typedef typename property_traits<VertexColorMap>::value_type ColorValue;
-    typedef color_traits<ColorValue> Color;
+    //typedef typename property_traits<VertexColorMap>::value_type ColorValue;
 
     typename graph_traits<Graph>::vertex_iterator ui, ui_end;
     for (boost::tie(ui, ui_end) = vertices(g); ui != ui_end; ++ui) {
-      put(vertex_color, *ui, Color::white());   vis.initialize_vertex(*ui, g);
+      /*put(vertex_color, *ui, Color::white());*/   vis.initialize_vertex(*ui, g);
     }
     typename graph_traits<Graph>::edge_iterator ei, ei_end;
-    for (boost::tie(ei, ei_end) = edges(g); ei != ei_end; ++ei)
-      put(edge_color, *ei, Color::white());
+    /*for (boost::tie(ei, ei_end) = edges(g); ei != ei_end; ++ei)
+      put(edge_color, *ei, Color::white());*/
 
     if (start_vertex != *vertices(g).first){ vis.start_vertex(start_vertex, g);
       detail::custom_undir_dfv_impl(g, start_vertex, vis, vertex_color, edge_color);
     }
 
-    for (boost::tie(ui, ui_end) = vertices(g); ui != ui_end; ++ui) {
+    /*for (boost::tie(ui, ui_end) = vertices(g); ui != ui_end; ++ui) {
       ColorValue u_color = get(vertex_color, *ui);
       if (u_color == Color::white()) {       vis.start_vertex(*ui, g);
         detail::custom_undir_dfv_impl(g, *ui, vis, vertex_color, edge_color);
       }
-    }
+    }*/
   }
 
   template <typename Graph, typename DFSVisitor, typename VertexColorMap,

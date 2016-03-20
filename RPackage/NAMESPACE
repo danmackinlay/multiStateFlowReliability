@@ -1,3 +1,4 @@
 export(crudeMC)
 export(pmc)
 export(turnip)
+export(generalisedSplitting)

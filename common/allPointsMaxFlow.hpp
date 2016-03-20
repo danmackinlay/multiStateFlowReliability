@@ -136,7 +136,7 @@ namespace allPointsMaxFlow
 		{
 			if(visitorState.edges.size() > 0 || visitorState.minimumValues.size() > 0) throw std::runtime_error("Internal error");
 			visitorState.start = *current;
-			std::fill(scratch.colorVector1.begin() + *current, scratch.colorVector1.end(), boost::white_color);
+			std::fill(scratch.colorVector1.begin(), scratch.colorVector1.end(), boost::white_color);
 			std::fill(scratch.colorVector2.begin(), scratch.colorVector2.end(), boost::white_color);
 			boost::custom_undirected_dfs(tree, visitor, vertexColorMap, edgeColorMap, *current);
 		}
