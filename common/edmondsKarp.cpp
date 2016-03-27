@@ -2,7 +2,7 @@
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 namespace multistateTurnip
 {
-	double edmondsKarpMaxFlow(double* capacity, double* flow, double* residual, const Context::internalDirectedGraph& graph, int source, int sink, double upperBound, edmondsKarpMaxFlowScratch& scratch)
+	void edmondsKarpMaxFlow(double* capacity, double* flow, double* residual, const Context::internalDirectedGraph& graph, int source, int sink, double upperBound, edmondsKarpMaxFlowScratch& scratch, double& maxFlow)
 	{
 		std::size_t nVertices = boost::num_vertices(graph);
 
@@ -20,14 +20,14 @@ namespace multistateTurnip
 		{
 			Context::internalDirectedGraph::out_edge_iterator current, end;
 			boost::tie(current, end) = boost::out_edges(source, graph);
-			double currentFlow = 0;
-			for(; current != end; current++)
+			if(maxFlow == upperBound)
 			{
-				currentFlow += flowMap[*current];
+				return;
 			}
-			if(currentFlow > upperBound)
+			else if(maxFlow > upperBound)
 			{
-				return currentFlow;
+				//This should never happen
+				throw std::runtime_error("Internal error");
 			}
 			else
 			{
@@ -46,7 +46,7 @@ namespace multistateTurnip
 				int bottleneckEdgeIndex = -1;
 				if((int)scratch.vertexPredecessor[sink] == (int)sink)
 				{
-					return currentFlow;
+					return;
 				}
 				while((int)current != source)
 				{
@@ -59,6 +59,13 @@ namespace multistateTurnip
 					}
 					current = next;
 				}
+				if(maxFlow + bottleneck > upperBound)
+				{
+					bottleneck = upperBound - maxFlow;
+					maxFlow = upperBound;
+				}
+				else maxFlow += bottleneck;
+				if(bottleneck < 0) throw std::runtime_error("Internal error");
 				current = sink;
 				while((int)current != source)
 				{

@@ -15,14 +15,16 @@ namespace multistateTurnip
 		const std::vector<std::pair<mpfr_class, mpfr_class> >& getData() const;
 		const std::vector<std::pair<double, double> >& getCumulativeData() const;
 		double operator()(boost::mt19937& randomSource) const;
+		double sampleConditionalLessThan(boost::mt19937& randomSource, double smaller) const;
 		capacityDistribution& operator=(capacityDistribution&& other);
 		capacityDistribution();
 		capacityDistribution truncateAtMax(mpfr_class threshold);
 	private:
 		capacityDistribution(const capacityDistribution& other);
 		capacityDistribution& operator=(const capacityDistribution& other);
-		std::vector<std::pair<mpfr_class, mpfr_class>> data;
-		std::vector<std::pair<double, double>> cumulativeData;
+		std::vector<std::pair<mpfr_class, mpfr_class> > data;
+		std::vector<std::pair<double, double> > cumulativeData;
+		std::vector<std::pair<double, std::vector<std::pair<double, double> > > > conditionalCumulativeData;
 	};
 }
 #endif

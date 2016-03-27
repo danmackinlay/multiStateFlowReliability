@@ -43,7 +43,7 @@ namespace multistateTurnip
 		std::vector<int> distance;
 		std::vector<boost::default_color_type> color;
 	};
-	double edmondsKarpMaxFlow(double* capacity, double* flow, double* residual, const Context::internalDirectedGraph& graph, int source, int sink, double upperBound, edmondsKarpMaxFlowScratch& scratch);
+	void edmondsKarpMaxFlow(double* capacity, double* flow, double* residual, const Context::internalDirectedGraph& graph, int source, int sink, double upperBound, edmondsKarpMaxFlowScratch& scratch, double& maxFlow);
 }
 #endif
 
