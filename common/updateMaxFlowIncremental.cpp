@@ -6,6 +6,11 @@ namespace multistateTurnip
 		int edgeIndex = boost::get(boost::edge_index, args.graph, args.edge);
 		Context::internalDirectedGraph::edge_descriptor reverseEdge = boost::get(boost::edge_reverse, args.graph, args.edge);
 		int reverseEdgeIndex = boost::get(boost::edge_index, args.graph, reverseEdge);
+		if(args.flow[edgeIndex] < 0)
+		{
+			std::swap(edgeIndex, reverseEdgeIndex);
+			std::swap(reverseEdge, args.edge);
+		}
 		if(args.newCapacity > args.capacity[edgeIndex])
 		{
 			if(args.flow[edgeIndex] < args.capacity[edgeIndex])
@@ -47,14 +52,13 @@ namespace multistateTurnip
 				//working1 is the new residual matrix
 				memcpy(&(args.working1.front()), args.residual, sizeof(double)*args.nDirectedEdges);
 				args.working1[edgeIndex] = 0;
-				args.working1[reverseEdgeIndex] = 2*args.newCapacity;
+				args.working1[reverseEdgeIndex] = 0;
 				//working2 is a copy of the new residual matrix
 				memcpy(&(args.working2.front()), &(args.working1.front()), sizeof(double)*args.nDirectedEdges);
 				//Outputs
 				std::fill(args.working3.begin(), args.working3.end(), 0);
 				double rerouted = 0;
 				edmondsKarpMaxFlow(&(args.working1[0]), &(args.working3[0]), &(args.working2[0]), args.graph, args.edge.m_source, args.edge.m_target, excess, args.scratch, rerouted);
-				if(excess > previousMaxFlow || rerouted > excess) throw std::runtime_error("Internal error");
 				newMaxFlow = previousMaxFlow - excess + rerouted;
 			}
 		}

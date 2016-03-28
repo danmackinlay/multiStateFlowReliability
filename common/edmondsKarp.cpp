@@ -52,9 +52,10 @@ namespace multistateTurnip
 				{
 					edmondsKarpMaxFlowScratch::filteredGraphType::vertex_descriptor next = scratch.vertexPredecessor[current];
 					edmondsKarpMaxFlowScratch::filteredGraphType::edge_descriptor filteredEdge = boost::edge(next, current, filteredGraph).first;
+					int candidateEdgeIndex = boost::get(boost::edge_index, filteredGraph, filteredEdge);
 					if(residualMap[filteredEdge] < bottleneck)
 					{
-						bottleneckEdgeIndex = boost::get(boost::edge_index, filteredGraph, filteredEdge);
+						bottleneckEdgeIndex = candidateEdgeIndex;
 						bottleneck = residual[bottleneckEdgeIndex];
 					}
 					current = next;
@@ -72,6 +73,7 @@ namespace multistateTurnip
 					edmondsKarpMaxFlowScratch::filteredGraphType::vertex_descriptor next = scratch.vertexPredecessor[current];
 					edmondsKarpMaxFlowScratch::filteredGraphType::edge_descriptor filteredEdge = boost::edge(next, current, filteredGraph).first;
 					flowMap[filteredEdge] += bottleneck;
+					if(fabs(flowMap[filteredEdge] - capacityMap[filteredEdge]) < 1e-8) flowMap[filteredEdge] = capacityMap[filteredEdge];
 					residualMap[filteredEdge] -= bottleneck;
 
 					edmondsKarpMaxFlowScratch::filteredGraphType::edge_descriptor reverseEdge = boost::get(boost::edge_reverse, filteredGraph, filteredEdge);

@@ -6,6 +6,11 @@ namespace multistateTurnip
 		int edgeIndex = boost::get(boost::edge_index, args.graph, args.edge);
 		Context::internalDirectedGraph::edge_descriptor reverseEdge = boost::get(boost::edge_reverse, args.graph, args.edge);
 		int reverseEdgeIndex = boost::get(boost::edge_index, args.graph, reverseEdge);
+		if(args.flow[edgeIndex] < 0)
+		{
+			std::swap(edgeIndex, reverseEdgeIndex);
+			std::swap(reverseEdge, args.edge);
+		}
 		if(args.newCapacity > args.capacity[edgeIndex])
 		{
 			if(args.flow[edgeIndex] < args.capacity[edgeIndex])
@@ -46,17 +51,25 @@ namespace multistateTurnip
 				//working1 is the new residual matrix, after we alter the flow so that the edge is saturated
 				memcpy(&(args.working1.front()), args.residual, sizeof(double)*args.nDirectedEdges);
 				args.working1[edgeIndex] = 0;
-				args.working1[reverseEdgeIndex] = 2 * args.newCapacity;
+				args.working1[reverseEdgeIndex] = 0;//2 * args.newCapacity;
 				//working2 is a copy of the new residual matrix
 				memcpy(&(args.working2.front()), &(args.working1.front()), sizeof(double)*args.nDirectedEdges);
 				//Outputs
 				std::fill(args.working3.begin(), args.working3.end(), 0);
 				double rerouted = 0;
 				edmondsKarpMaxFlow(&(args.working1[0]), &(args.working3[0]), &(args.working2[0]), args.graph, args.edge.m_source, args.edge.m_target, excess, args.scratch, rerouted);
-				for(int i = 0; i < args.nDirectedEdges; i++) args.flow[i] += args.working3[i];
+				//Update flow and residual
+				for(int i = 0; i < args.nDirectedEdges; i++) 
+				{
+					args.flow[i] += args.working3[i];
+					args.residual[i] -= args.working3[i];
+				}
+				args.residual[edgeIndex] = 0;
+				args.residual[reverseEdgeIndex] = 0;
 				if((int)args.edge.m_source != args.source)
 				{
-					memcpy(&(args.working2[0]), &(args.working1[0]), sizeof(double)*args.nDirectedEdges);
+					memcpy(&(args.working2[0]), &(args.residual[0]), sizeof(double)*args.nDirectedEdges);
+					memcpy(&(args.working1[0]), &(args.residual[0]), sizeof(double)*args.nDirectedEdges);
 					std::fill(args.working3.begin(), args.working3.end(), 0);
 					double unused = 0;
 					edmondsKarpMaxFlow(&(args.working1[0]), &(args.working3[0]), &(args.working2[0]), args.graph, args.edge.m_source, args.source, excess - rerouted, args.scratch, unused);
@@ -64,7 +77,8 @@ namespace multistateTurnip
 				}
 				if((int)args.edge.m_target != args.sink)
 				{
-					memcpy(&(args.working2[0]), &(args.working1[0]), sizeof(double)*args.nDirectedEdges);
+					memcpy(&(args.working2[0]), &(args.residual[0]), sizeof(double)*args.nDirectedEdges);
+					memcpy(&(args.working1[0]), &(args.residual[0]), sizeof(double)*args.nDirectedEdges);
 					std::fill(args.working3.begin(), args.working3.end(), 0);
 					double unused = 0;
 					edmondsKarpMaxFlow(&(args.working1[0]), &(args.working3[0]), &(args.working2[0]), args.graph, args.sink, args.edge.m_target, excess - rerouted, args.scratch, unused);
@@ -72,6 +86,8 @@ namespace multistateTurnip
 				}
 				newMaxFlow = previousMaxFlow - excess + rerouted;
 				//update residual
+				args.flow[edgeIndex] = args.newCapacity;
+				args.flow[reverseEdgeIndex] = -args.newCapacity;
 				for(int i = 0; i < args.nDirectedEdges; i++) args.residual[i] = args.capacity[i] - args.flow[i];
 			}
 		}
