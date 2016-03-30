@@ -21,13 +21,17 @@ interestVertices <- as.integer(str_split(scenarios[SCENARIO_INDEX, "interestVert
 capacityMatrix <- data.frame(capacity = 0:(nCapacities-1), probability = epsilon)
 capacityMatrix[nrow(capacityMatrix), "probability"] <- 1 - (nCapacities-1)*epsilon
 
+maxCapacity <- max(capacityMatrix[,1])
+
 if(graph == "dodecahedron")
 {
 	graph <- igraph::read.graph("./dodecahedron.graphml", format = "graphml")
+	maxPossibleFlow <- 3*maxCapacity
 } else if(graph == "grid10")
 {
 	library(igraph)
 	graph <- graph.lattice(length = 10, dim = 2)
+	maxPossibleFlow <- 2*maxCapacity
 } else
 {
 	stop("Unknown graph")
@@ -95,6 +99,17 @@ if(method == "crudeMC")
 	while(counter < 100)
 	{
 		results[[counter]] <- turnip(graph = graph, capacityMatrix = capacityMatrix, n = n, threshold = demand, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, useAllPointsMaxFlow = TRUE, allPointsMaxFlowIncrement = 1L)
+		save(results, file = tmpFile)
+		file.rename(from = tmpFile, to = outputFile)
+		counter <- counter + 1
+	}
+} else if(method == "gs")
+{
+	counter <- 1
+	results <- list()
+	while(counter < 100)
+	{
+		results[[counter]] <- generalisedSplitting(graph = graph, capacityMatrix = capacityMatrix, n = n, levels = (maxPossibleFlow-1):demand, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, verbose=FALSE)
 		save(results, file = tmpFile)
 		file.rename(from = tmpFile, to = outputFile)
 		counter <- counter + 1
