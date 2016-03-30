@@ -20,6 +20,11 @@ namespace multistateTurnip
 			cumulativeData[i].second = (double)sum;
 			sum += data[i].second;
 		}
+		double discrepancy = (double)(mpfr_class)(sum - 1);
+		if(fabs(discrepancy) > 1e-6)
+		{
+			throw std::runtime_error("Capacity probabilities must sum to 1");
+		}
 		if(cumulativeData.size() > 1 && (cumulativeData.rbegin()+1)->second > 1)
 		{
 			throw std::runtime_error("The sum of the first n - 1 probabilities was already bigger than 1");
@@ -77,12 +82,14 @@ namespace multistateTurnip
 	{
 		data.swap(other.data);
 		cumulativeData.swap(other.cumulativeData);
+		conditionalCumulativeData.swap(other.conditionalCumulativeData);
 		return *this;
 	}
 	capacityDistribution::capacityDistribution(capacityDistribution&& other)
 	{
 		data.swap(other.data);
 		cumulativeData.swap(other.cumulativeData);
+		conditionalCumulativeData.swap(other.conditionalCumulativeData);
 	}
 	capacityDistribution capacityDistribution::truncateAtMax(mpfr_class newThreshold)
 	{
@@ -113,6 +120,7 @@ namespace multistateTurnip
 				boost::tie(lowerBound, upperBound) = std::equal_range(relevantVector.begin(), relevantVector.end(), searchFor, sortSecond);
 				double value;
 				if(lowerBound == cumulativeData.end()) value = relevantVector.rbegin()->first;
+				else if(lowerBound == cumulativeData.begin()) value = lowerBound->first;
 				else value = (lowerBound-1)->first;
 				return value;
 			}
