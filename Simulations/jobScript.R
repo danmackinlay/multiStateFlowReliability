@@ -107,9 +107,10 @@ if(method == "crudeMC")
 {
 	counter <- 1
 	results <- list()
+	levels <- maxPossibleFlow:demand
 	while(counter < 100)
 	{
-		results[[counter]] <- generalisedSplitting(graph = graph, capacityMatrix = capacityMatrix, n = n, levels = (maxPossibleFlow-1):demand, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, verbose=FALSE)
+		results[[counter]] <- generalisedSplitting(graph = graph, capacityMatrix = capacityMatrix, n = n, levels = levels, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, verbose=FALSE)
 		save(results, file = tmpFile)
 		file.rename(from = tmpFile, to = outputFile)
 		counter <- counter + 1
