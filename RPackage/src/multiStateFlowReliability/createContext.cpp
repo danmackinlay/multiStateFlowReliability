@@ -3,6 +3,8 @@ namespace multistateTurnip
 {
 	Context createContext(SEXP graph_sexp, capacityDistribution&& capacity, int vertex1, int vertex2, mpfr_class threshold, R_GRAPH_TYPE type)
 	{
+		capacity.truncateAtMax(threshold);
+
 		boost::shared_ptr<std::vector<int> > interestVertices(new std::vector<int>());
 		interestVertices->push_back(vertex1);
 		interestVertices->push_back(vertex2);
