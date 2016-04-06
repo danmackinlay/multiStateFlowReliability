@@ -5,7 +5,7 @@
 #include "convertGraph.h"
 namespace multistateTurnip
 {
-	SEXP generalisedSplitting(SEXP graph, SEXP capacity, SEXP n_sexp, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, R_GRAPH_TYPE type)
+	SEXP generalisedSplittingFixedEffort(SEXP graph, SEXP capacity, SEXP n_sexp, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, R_GRAPH_TYPE type)
 	{
 	BEGIN_RCPP
 		std::vector<double> levels;
@@ -82,13 +82,13 @@ namespace multistateTurnip
 		capacityDistribution distribution = createCapacityDistribution(capacity);
 		Context context = createContext(graph, distribution, interestVertices[0]-1, interestVertices[1]-1, levels.back(), type);
 
-		generalisedSplittingArgs args(context);
+		generalisedSplittingFixedEffortArgs args(context);
 		args.randomSource.seed(seed);
 		args.n = n;
 		args.levels = levels;
 		args.outputFunc = [](std::string& output){Rcpp::Rcout << output << std::endl;};
 		args.progressFunction = progressFunction;
-		generalisedSplitting(args);
+		generalisedSplittingFixedEffort(args);
 
 		if(verbose)
 		{
@@ -97,17 +97,17 @@ namespace multistateTurnip
 		return Rcpp::wrap(args.estimate);
 	END_RCPP
 	}
-	SEXP generalisedSplitting_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp)
+	SEXP generalisedSplittingFixedEffort_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp)
 	{
-		return generalisedSplitting(graph, capacity, n, levels_sexp, seed_sexp, interestVertices_sexp, verbose_sexp, IGRAPH);
+		return generalisedSplittingFixedEffort(graph, capacity, n, levels_sexp, seed_sexp, interestVertices_sexp, verbose_sexp, IGRAPH);
 	}
-	SEXP generalisedSplitting_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp)
+	SEXP generalisedSplittingFixedEffort_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp)
 	{
-		return generalisedSplitting(graph, capacity, n, levels_sexp, seed_sexp, interestVertices_sexp, verbose_sexp, GRAPHAM);
+		return generalisedSplittingFixedEffort(graph, capacity, n, levels_sexp, seed_sexp, interestVertices_sexp, verbose_sexp, GRAPHAM);
 	}
-	SEXP generalisedSplitting_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp)
+	SEXP generalisedSplittingFixedEffort_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp)
 	{
-		return generalisedSplitting(graph, capacity, n, levels_sexp, seed_sexp, interestVertices_sexp, verbose_sexp, GRAPHNEL);
+		return generalisedSplittingFixedEffort(graph, capacity, n, levels_sexp, seed_sexp, interestVertices_sexp, verbose_sexp, GRAPHNEL);
 	}
 
 }

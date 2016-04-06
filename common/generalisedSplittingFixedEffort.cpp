@@ -1,4 +1,4 @@
-#include "generalisedSplitting.h"
+#include "generalisedSplittingFixedEffort.h"
 #include "edmondsKarp.h"
 #include "updateMaxFlowIncremental.h"
 #include "updateFlowIncremental.h"
@@ -78,7 +78,7 @@ namespace multistateTurnip
 			*args.maxFlow = newMaxFlow;
 		}
 	}
-	void generalisedSplitting(generalisedSplittingArgs& args)
+	void generalisedSplittingFixedEffort(generalisedSplittingFixedEffortArgs& args)
 	{
 		args.estimate = 1;
 		edmondsKarpMaxFlowScratch scratch;

@@ -1,11 +1,11 @@
-#ifndef GENERALIZED_SPLITTING_HEADER_GUARD
-#define GENERALIZED_SPLITTING_HEADER_GUARD
+#ifndef GENERALIZED_SPLITTING_FIXED_EFFORT_HEADER_GUARD
+#define GENERALIZED_SPLITTING_FIXED_EFFORT_HEADER_GUARD
 #include "context.h"
 namespace multistateTurnip
 {
-	struct generalisedSplittingArgs
+	struct generalisedSplittingFixedEffortArgs
 	{
-		generalisedSplittingArgs(const Context& context)
+		generalisedSplittingFixedEffortArgs(const Context& context)
 			:context(context)
 		{}
 		std::vector<double> levels;
@@ -16,6 +16,6 @@ namespace multistateTurnip
 		std::function<void(unsigned long, unsigned long)> progressFunction;
 		std::function<void(std::string&)> outputFunc;
 	};
-	void generalisedSplitting(generalisedSplittingArgs& args);
+	void generalisedSplittingFixedEffort(generalisedSplittingFixedEffortArgs& args);
 }
 #endif
