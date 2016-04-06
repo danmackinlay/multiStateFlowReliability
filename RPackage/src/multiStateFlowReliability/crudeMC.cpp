@@ -50,7 +50,7 @@ namespace multistateTurnip
 		if(interestVertices.size() != 2) std::runtime_error("Input interestVertices must be a pair of numbers");
 
 		capacityDistribution distribution = createCapacityDistribution(capacity);
-		Context context = createContext(graph, std::move(distribution), interestVertices[0]-1, interestVertices[1]-1, threshold, type);
+		Context context = createContext(graph, distribution, interestVertices[0]-1, interestVertices[1]-1, threshold, type);
 
 		crudeMCArgs args(context);
 		args.randomSource.seed(seed);

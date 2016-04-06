@@ -26,5 +26,5 @@ pmc <- function(graph, capacityMatrix, n, threshold, seed, interestVertices, ver
 	{
 		stop("Input graph must have class \"igraph\", \"graphAM\" or \"graphNEL\"")
 	}
-	return(new("pmcResult", call = match.call(), start = start, end = end, n = as.integer(n), capacity = capacityMatrix, threshold = threshold, interestVertices = as.integer(interestVertices), seed = as.integer(seed), estimateFirstMoment = mpfr(result$estimateFirstMoment), estimateSecondMoment = mpfr(result$estimateSecondMoment), varianceEstimate = mpfr(result$varianceEstimate), sqrtVarianceEstimate = mpfr(result$sqrtVarianceEstimate), relativeErrorEstimate = mpfr(result$relativeErrorEstimate)))
+	return(new("pmcResult", call = match.call(), start = start, end = end, n = as.integer(n), capacity = capacityMatrix, threshold = threshold, interestVertices = as.integer(interestVertices), seed = as.integer(seed), firstMomentSingleSample = mpfr(result$firstMomentSingleSample), secondMomentSingleSample = mpfr(result$secondMomentSingleSample), varianceSingleSample = mpfr(result$varianceSingleSample), sqrtVarianceOfEstimate = mpfr(result$sqrtVarianceOfEstimate), relativeErrorEstimate = mpfr(result$relativeErrorEstimate)))
 }

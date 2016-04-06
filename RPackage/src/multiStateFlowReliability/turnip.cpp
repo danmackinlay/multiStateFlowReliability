@@ -73,7 +73,7 @@ namespace multistateTurnip
 
 
 		capacityDistribution distribution = createCapacityDistribution(capacity);
-		Context context = createContext(graph, std::move(distribution), interestVertices[0]-1, interestVertices[1]-1, threshold, type);
+		Context context = createContext(graph, distribution, interestVertices[0]-1, interestVertices[1]-1, threshold, type);
 
 		turnipArgs args(context);
 		args.randomSource.seed(seed);
@@ -83,8 +83,8 @@ namespace multistateTurnip
 		args.allPointsMaxFlowIncrement = allPointsMaxFlowIncrement;
 		turnip(args);
 
-		std::string estimateFirstMomentStr = args.estimateFirstMoment.str(), estimateSecondMomentStr = args.estimateSecondMoment.str(), varianceEstimateStr = args.varianceEstimate.str(), sqrtVarianceEstimateStr = args.sqrtVarianceEstimate.str(), relativeErrorEstimateStr = args.relativeErrorEstimate.str();
-		return Rcpp::List::create(Rcpp::Named("estimateFirstMoment") = estimateFirstMomentStr, Rcpp::Named("estimateSecondMoment") = estimateSecondMomentStr, Rcpp::Named("varianceEstimate") = varianceEstimateStr, Rcpp::Named("sqrtVarianceEstimate") = sqrtVarianceEstimateStr, Rcpp::Named("relativeErrorEstimate") = relativeErrorEstimateStr);
+		std::string firstMomentSingleSampleStr = args.firstMomentSingleSample.str(), secondMomentSingleSampleStr = args.secondMomentSingleSample.str(), varianceSingleSampleStr = args.varianceSingleSample.str(), sqrtVarianceOfEstimateStr = args.sqrtVarianceOfEstimate.str(), relativeErrorEstimateStr = args.relativeErrorEstimate.str();
+		return Rcpp::List::create(Rcpp::Named("firstMomentSingleSample") = firstMomentSingleSampleStr, Rcpp::Named("secondMomentSingleSample") = secondMomentSingleSampleStr, Rcpp::Named("varianceSingleSample") = varianceSingleSampleStr, Rcpp::Named("sqrtVarianceOfEstimate") = sqrtVarianceOfEstimateStr, Rcpp::Named("relativeErrorEstimate") = relativeErrorEstimateStr);
 	END_RCPP
 	}
 	SEXP turnip_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp)

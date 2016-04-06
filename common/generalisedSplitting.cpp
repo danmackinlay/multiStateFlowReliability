@@ -84,7 +84,7 @@ namespace multistateTurnip
 		edmondsKarpMaxFlowScratch scratch;
 		const Context::internalDirectedGraph& graph = args.context.getDirectedGraph();
 		const capacityDistribution& distribution = args.context.getDistribution();
-		const std::vector<int>& interestVertices = args.context.getInterestVertices();
+		int source = args.context.getSource(), sink = args.context.getSink();
 		std::size_t nEdges = boost::num_edges(graph);
 		std::vector<double> residual(nEdges * args.n, 0), flow(nEdges * args.n, 0), capacity(nEdges * args.n, 0);
 		std::vector<double> newResidual(nEdges * args.n, 0), newFlow(nEdges * args.n, 0), newCapacity(nEdges * args.n, 0);
@@ -95,7 +95,6 @@ namespace multistateTurnip
 		shuffled.reserve(args.n);
 		std::vector<bool> extraCopy(args.n, false);
 		double oldLevel = args.levels.front();
-		int source = interestVertices[0], sink = interestVertices[1];
 		boost::random_number_generator<boost::mt19937> generator(args.randomSource);
 		resampleCapacitiesArgs resampleArgs(args.context, scratch, args.randomSource);
 		resampleArgs.nEdges = (int)nEdges/2;

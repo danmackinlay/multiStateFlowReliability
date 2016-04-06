@@ -80,7 +80,7 @@ namespace multistateTurnip
 		}
 
 		capacityDistribution distribution = createCapacityDistribution(capacity);
-		Context context = createContext(graph, std::move(distribution), interestVertices[0]-1, interestVertices[1]-1, levels.back(), type);
+		Context context = createContext(graph, distribution, interestVertices[0]-1, interestVertices[1]-1, levels.back(), type);
 
 		generalisedSplittingArgs args(context);
 		args.randomSource.seed(seed);

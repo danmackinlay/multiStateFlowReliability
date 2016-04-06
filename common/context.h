@@ -21,41 +21,33 @@ namespace multistateTurnip
 				boost::property<boost::edge_reverse_t, directedGraphTraits::edge_descriptor>
 			> 
 		> internalDirectedGraph;
-		typedef std::pair<float, float> vertexPosition;
 
-		Context(boost::shared_ptr<const inputGraph> graph, boost::shared_ptr<const std::vector<int> > interestVertices, boost::shared_ptr<std::vector<vertexPosition> > vertexPositions, capacityDistribution&& distribution, const mpfr_class& threshold);
+		Context(boost::shared_ptr<const inputGraph> graph, int source, int sink, capacityDistribution&& distribution, const mpfr_class& threshold);
 
 		Context& operator=(Context&& other);
 		Context(Context&& other);
 		~Context();
 		
-		static Context gridContext(int gridDimension, boost::shared_ptr<const std::vector<int> > interestVertices, capacityDistribution&& distribution, const mpfr_class& threshold);
-		static Context fromFile(std::string path, bool& successful, boost::shared_ptr<const std::vector<int> > interestVertices, std::string& message, capacityDistribution&& distribution, const mpfr_class& threshold);
+		static Context gridContext(int gridDimension, int source, int sink, capacityDistribution&& distribution, const mpfr_class& threshold);
+		static Context fromFile(std::string path, bool& successful, int source, int sink, std::string& message, capacityDistribution&& distribution, const mpfr_class& threshold);
 		static Context emptyContext();
 		const internalGraph& getGraph() const;
 		const internalDirectedGraph& getDirectedGraph() const;
-		const int* getEdgeDistances() const;
-		std::size_t getNEdges() const;
-		const std::vector<int>& getInterestVertices() const;
-		const std::vector<vertexPosition>& getVertexPositions() const;
+		int getSource() const;
+		int getSink() const;
 		const capacityDistribution& getDistribution() const;
 		std::vector<double>& getCapacityVector() const;
-		static Context completeContext(int nVertices, int nInterestVertices, capacityDistribution&& distribution, const mpfr_class& threshold);
-		double getMaxFlow(std::vector<double>& capacities) const;
-		double getMaxFlow(std::vector<double>& capacities, Context::internalGraph::vertex_descriptor source, Context::internalGraph::vertex_descriptor sink) const;
+		static Context completeContext(int nVertices, capacityDistribution&& distribution, const mpfr_class& threshold);
+//		double getMaxFlow(std::vector<double>& capacities) const;
+//		double getMaxFlow(std::vector<double>& capacities, Context::internalGraph::vertex_descriptor source, Context::internalGraph::vertex_descriptor sink) const;
 	private:
-		//Context& operator=(Context const& other);
+		Context& operator=(Context const& other);
 		Context();
-		void constructEdgeDistances();
 		void constructDirectedGraph();
 		boost::shared_ptr<const internalGraph> graph;
 		boost::shared_ptr<const internalDirectedGraph> directedGraph;
-		boost::shared_ptr<const std::vector<int> > interestVertices;
-		boost::shared_ptr<const std::vector<vertexPosition> > vertexPositions;
+		int source, sink;
 
-		std::size_t nEdges;
-
-		boost::shared_array<int> edgeDistances;
 		capacityDistribution distribution;
 		mpfr_class threshold;
 		

@@ -40,7 +40,11 @@ if(graph == "dodecahedron")
 if(method == "crudeMC")
 {
 	counter <- 1
-	results <- list()
+	if(file.exists(outputFile))
+	{
+		load(outputFile)
+		counter <- length(results)+1
+	} else results <- list()
 	while(counter < 100)
 	{
 		results[[counter]] <- crudeMC(graph = graph, capacityMatrix = capacityMatrix, n = n, threshold = demand, seed = SCENARIO_INDEX, interestVertices = interestVertices) 
@@ -51,7 +55,11 @@ if(method == "crudeMC")
 } else if(method == "pmc")
 {
 	counter <- 1
-	results <- list()
+	if(file.exists(outputFile))
+	{
+		load(outputFile)
+		counter <- length(results)+1
+	} else results <- list()
 	while(counter < 100)
 	{
 		results[[counter]] <- pmc(graph = graph, capacityMatrix = capacityMatrix, n = n, threshold = demand, seed = SCENARIO_INDEX + counter * 100000L, interestVertices = interestVertices)
@@ -62,7 +70,11 @@ if(method == "crudeMC")
 } else if(method == "turnipSingle")
 {
 	counter <- 1
-	results <- list()
+	if(file.exists(outputFile))
+	{
+		load(outputFile)
+		counter <- length(results)+1
+	} else results <- list()
 	while(counter < 100)
 	{
 		results[[counter]] <- turnip(graph = graph, capacityMatrix = capacityMatrix, n = n, threshold = demand, seed = SCENARIO_INDEX + counter * 100000L, interestVertices = interestVertices, useAllPointsMaxFlow = FALSE)
@@ -73,7 +85,11 @@ if(method == "crudeMC")
 } else if(method == "turnipFull3")
 {
 	counter <- 1
-	results <- list()
+	if(file.exists(outputFile))
+	{
+		load(outputFile)
+		counter <- length(results)+1
+	} else results <- list()
 	while(counter < 100)
 	{
 		results[[counter]] <- turnip(graph = graph, capacityMatrix = capacityMatrix, n = n, threshold = demand, seed = SCENARIO_INDEX + counter * 100000L, interestVertices = interestVertices, useAllPointsMaxFlow = TRUE, allPointsMaxFlowIncrement = 3L)
@@ -84,7 +100,11 @@ if(method == "crudeMC")
 } else if(method == "turnipFull2")
 {
 	counter <- 1
-	results <- list()
+	if(file.exists(outputFile))
+	{
+		load(outputFile)
+		counter <- length(results)+1
+	} else results <- list()
 	while(counter < 100)
 	{
 		results[[counter]] <- turnip(graph = graph, capacityMatrix = capacityMatrix, n = n, threshold = demand, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, useAllPointsMaxFlow = TRUE, allPointsMaxFlowIncrement = 2L)
@@ -95,7 +115,11 @@ if(method == "crudeMC")
 } else if (method == "turnipFull1")
 {
 	counter <- 1
-	results <- list()
+	if(file.exists(outputFile))
+	{
+		load(outputFile)
+		counter <- length(results)+1
+	} else results <- list()
 	while(counter < 100)
 	{
 		results[[counter]] <- turnip(graph = graph, capacityMatrix = capacityMatrix, n = n, threshold = demand, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, useAllPointsMaxFlow = TRUE, allPointsMaxFlowIncrement = 1L)
@@ -106,7 +130,11 @@ if(method == "crudeMC")
 } else if(method == "gs")
 {
 	counter <- 1
-	results <- list()
+	if(file.exists(outputFile))
+	{
+		load(outputFile)
+		counter <- length(results)+1
+	} else results <- list()
 	levels <- maxPossibleFlow:demand
 	while(counter < 100)
 	{

@@ -2,7 +2,7 @@
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 namespace multistateTurnip
 {
-	void edmondsKarpMaxFlow(double* capacity, double* flow, double* residual, const Context::internalDirectedGraph& graph, int source, int sink, double upperBound, edmondsKarpMaxFlowScratch& scratch, double& maxFlow)
+	void edmondsKarpMaxFlow(const double* capacity, double* flow, double* residual, const Context::internalDirectedGraph& graph, int source, int sink, double upperBound, edmondsKarpMaxFlowScratch& scratch, double& maxFlow)
 	{
 		std::size_t nVertices = boost::num_vertices(graph);
 
@@ -13,7 +13,7 @@ namespace multistateTurnip
 		edmondsKarpMaxFlowScratch::edgeIndexMapType edgeIndexMap = boost::get(boost::edge_index, graph);
 		edmondsKarpMaxFlowScratch::flowMapType flowMap(flow, edgeIndexMap);
 		edmondsKarpMaxFlowScratch::flowMapType residualMap(residual, edgeIndexMap);
-		edmondsKarpMaxFlowScratch::flowMapType capacityMap(capacity, edgeIndexMap);
+		edmondsKarpMaxFlowScratch::capacityMapType capacityMap(capacity, edgeIndexMap);
 
 		edmondsKarpPredicate predicate(residual, &graph);
 		while(true)

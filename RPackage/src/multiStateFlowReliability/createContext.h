@@ -6,6 +6,6 @@
 #include "convertGraph.h"
 namespace multistateTurnip
 {
-	Context createContext(SEXP graph, capacityDistribution&& capacity, int vertex1, int vertex2, mpfr_class threshold, R_GRAPH_TYPE graphType);
+	Context createContext(SEXP graph, capacityDistribution& capacity, int vertex1, int vertex2, mpfr_class threshold, R_GRAPH_TYPE graphType);
 }
 #endif

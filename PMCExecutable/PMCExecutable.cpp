@@ -86,7 +86,7 @@ namespace multistateTurnip
 		arguments.outputFunc = [](std::string& input){std::cout << input << std::endl;};
 		pmc(arguments);
 
-		std::cout << "Unreliability probability estimate was " << (double)arguments.estimateFirstMoment << std::endl;
+		std::cout << "Unreliability probability estimate was " << (double)arguments.firstMomentSingleSample << std::endl;
 		std::cout << "Relative error was " << (double)arguments.relativeErrorEstimate << std::endl;
 		return 0;
 	}

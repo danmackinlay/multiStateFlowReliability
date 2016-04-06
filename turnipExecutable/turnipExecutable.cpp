@@ -58,17 +58,18 @@ namespace multistateTurnip
 			//Don't use this distribution - It gets moved into the Context object
 			capacityDistribution movedDistribution;
 			std::string error;
+			//The original minimum possible flow value
 			mpfr_class originalMinFlow;
-			//This alter the minimum flow to be zero, and returns the original.
+			//Read the capacity distribution argument. It actually changes the distribution so that the minimum is zero, and returns the input minimum in originalMinFlow
 			if(!readCapacityDistribution(variableMap, movedDistribution, originalMinFlow, error))
 			{
 				std::cout << error << std::endl;
 				return 0;
 			}
+			//Change the threshold to account for the change in the minimum flow
 			mpfr_class newThreshold = threshold - originalMinFlow;
 			newThresholdD = (double)newThreshold;
-			//truncate the set of possible capacities at the new threshold, otherwise
-			//sorting that many edge repair times is a bottleneck in itself. 
+			//truncate the set of possible capacities at the new threshold, otherwise sorting that many edge repair times is a bottleneck
 			movedDistribution = movedDistribution.truncateAtMax(newThreshold);
 			if(newThreshold < 0)
 			{
@@ -92,7 +93,7 @@ namespace multistateTurnip
 
 		turnip(arguments);
 	
-		std::cout << "Unreliability probability estimate was " << (double)arguments.estimateFirstMoment << std::endl;
+		std::cout << "Unreliability probability estimate was " << (double)arguments.firstMomentSingleSample << std::endl;
 		std::cout << "Relative error was " << (double)arguments.relativeErrorEstimate << std::endl;
 		return 0;
 	}

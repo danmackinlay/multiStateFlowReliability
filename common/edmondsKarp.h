@@ -30,6 +30,7 @@ namespace multistateTurnip
 		typedef typename boost::property_map<Context::internalDirectedGraph, boost::vertex_index_t>::const_type vertexIndexMapType;
 		typedef typename boost::property_map<Context::internalDirectedGraph, boost::edge_index_t>::const_type edgeIndexMapType;
 		typedef boost::compose_property_map<double*, edgeIndexMapType> flowMapType;
+		typedef boost::compose_property_map<const double*, edgeIndexMapType> capacityMapType;
 
 		typedef typename boost::property_map<filteredGraphType, boost::vertex_index_t>::const_type filteredVertexIndexMapType;
 		typedef typename boost::property_map<filteredGraphType, boost::edge_index_t>::type filteredEdgeIndexMapType;
@@ -43,7 +44,7 @@ namespace multistateTurnip
 		std::vector<int> distance;
 		std::vector<boost::default_color_type> color;
 	};
-	void edmondsKarpMaxFlow(double* capacity, double* flow, double* residual, const Context::internalDirectedGraph& graph, int source, int sink, double upperBound, edmondsKarpMaxFlowScratch& scratch, double& maxFlow);
+	void edmondsKarpMaxFlow(const double* capacity, double* flow, double* residual, const Context::internalDirectedGraph& graph, int source, int sink, double upperBound, edmondsKarpMaxFlowScratch& scratch, double& maxFlow);
 }
 #endif
 

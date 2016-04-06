@@ -11,12 +11,13 @@ namespace multistateTurnip
 	}
 	bool readCapacityDistribution(boost::program_options::variables_map& variableMap, capacityDistribution& out, mpfr_class& originalMinFlow, std::string& error)
 	{
+		//There are two options, capacityFile and uniformCapacity
 		if (variableMap.count("capacityFile") + variableMap.count("uniformCapacity")  != 1)
 		{
 			error = "Please enter exactly one of `capacityFile' and `uniformCapacity'";
 			return false;
 		}
-		std::vector<std::pair<mpfr_class, mpfr_class>> distributionData;
+		std::vector<std::pair<mpfr_class, mpfr_class> > distributionData;
 		if (variableMap.count("capacityFile") == 1)
 		{
 			std::string capacityFile = variableMap["capacityFile"].as<std::string>();
@@ -27,6 +28,7 @@ namespace multistateTurnip
 			while (std::getline(fileHandle, line))
 			{
 				std::vector<std::string> parts;
+				//Each line should be two numbers, comma separated
 				boost::split(parts, line, boost::is_any_of(","), boost::token_compress_on);
 				if (parts.size() != 2)
 				{
@@ -37,11 +39,13 @@ namespace multistateTurnip
 				boost::trim(parts[1]);
 
 				mpfr_class value, probability;
+				//First value is the capacity value
 				if (mpfr_set_str(value.backend().data(), parts[0].c_str(), 10, MPFR_RNDN) != 0)
 				{
 					error = "Unable to parse first number";
 					return false;
 				}
+				//Second value is the probability of that capacity value
 				if (mpfr_set_str(probability.backend().data(), parts[1].c_str(), 10, MPFR_RNDN) != 0)
 				{
 					error = "Unable to parse second number";
@@ -61,6 +65,7 @@ namespace multistateTurnip
 				std::pair<mpfr_class, mpfr_class> dataPair(std::move(value), std::move(probability));
 				distributionData.push_back(std::move(dataPair));
 			}
+			//Check that the probabilities sum to 1
 			mpfr_class difference = (1 - sum);
 			mpfr_class absDifference = boost::multiprecision::abs(difference);
 			if (absDifference > 1e-6)
@@ -69,9 +74,10 @@ namespace multistateTurnip
 				return false;
 			}
 
+			//Sort the data for the distribution
 			std::sort(distributionData.begin(), distributionData.end(), pairSorter);
+			//Alter the distribution so that the minimum value is zero, and return the original minimum in an output parameter
 			originalMinFlow = distributionData[0].first;
-			//Subtract original min flow away from all the stuff in the distribution data.
 			for (std::vector<std::pair<mpfr_class, mpfr_class> >::iterator i = distributionData.begin(); i != distributionData.end(); i++)
 			{
 				i->first -= originalMinFlow;
@@ -109,89 +115,71 @@ namespace multistateTurnip
 	bool readContext(boost::program_options::variables_map& variableMap, Context& out, capacityDistribution&& distribution, const mpfr_class& threshold)
 	{
 		boost::shared_ptr<std::vector<int> > interestVertices;
-		if(variableMap.count("interestVertices") != 1)
+		if(variableMap.count("source") != 1)
 		{
-			std::cout << "Please enter only one value for input `interestVertices'" << std::endl;
+			std::cout << "Please enter only one value for input `source'" << std::endl;
 			return false;
 		}
+		if(variableMap.count("sink") != 1)
 		{
-			std::vector<int> tmp = variableMap["interestVertices"].as<std::vector<int> >();
-			interestVertices = boost::shared_ptr<std::vector<int> >(new std::vector<int>());
-			interestVertices->insert(interestVertices->begin(), tmp.begin(), tmp.end());
-		}
-
-		int minInterest = *std::min_element(interestVertices->begin(), interestVertices->end());
-		int maxInterest = *std::max_element(interestVertices->begin(), interestVertices->end());
-		if(minInterest < 0)
-		{
-			std::cout << "Input `interestVertices' cannot contain negative indices" << std::endl;
+			std::cout << "Please enter only one value for input `sink'" << std::endl;
 			return false;
 		}
 		if(variableMap.count("graphFile") + variableMap.count("gridGraph") + variableMap.count("completeGraph") != 1)
 		{
-			std::cout << "Please enter exactly one of `completeGrahp', `gridGraph', `graphFile' or `torusGraph'" << std::endl;
+			std::cout << "Please enter exactly one of `completeGraph', `gridGraph', `graphFile' or `torusGraph'" << std::endl;
 			return false;
-		}
-		else if(variableMap.count("graphFile") == 1)
-		{
-			if(interestVertices->size() != 2)
-			{
-				std::cout << "Input `interestVertices' must contain two vertex indices" << std::endl;
-				return false;
-			}
-
-			bool successful = false;
-			std::string message;
-			try
-			{
-				out = Context::fromFile(variableMap["graphFile"].as<std::string>(), successful, interestVertices, message, std::move(distribution), threshold);
-			}
-			catch(std::runtime_error& err)
-			{
-				message = err.what();
-				successful = false;
-			}
-			if(!successful)
-			{
-				std::cout << "Error reading graphml file. " << message << ". Exiting..." << std::endl;
-				return false;
-			}
-		}
-		else if(variableMap.count("gridGraph") == 1)
-		{
-			if(interestVertices->size() != 2)
-			{
-				std::cout << "Input `interestVertices' must contain two vertex indices" << std::endl;
-				return false;
-			}
-
-			int gridDimension = variableMap["gridGraph"].as<int>();
-			if(gridDimension <= 0)
-			{
-				std::cout << "Input `gridGraph' must be a positive integer" << std::endl;
-				return false;
-			}
-			if(maxInterest >= gridDimension*gridDimension || minInterest < 0)
-			{
-				std::cout << "Input 'interestVertices' must contain numbers between 0 and (nVertices - 1) inclusive" << std::endl;
-				return false;
-			}
-			out = Context::gridContext(gridDimension, interestVertices, std::move(distribution), threshold);
 		}
 		else if(variableMap.count("completeGraph") == 1)
 		{
 			int nVertices = variableMap["completeGraph"].as<int>();
-			if(interestVertices->size() != 1)
+			out = Context::completeContext(nVertices, std::move(distribution), threshold);
+		}
+		else
+		{
+			int source = variableMap["source"].as<int>();
+			int sink = variableMap["sink"].as<int>();
+
+			if(source < 0 || sink < 0)
 			{
-				std::cout << "For a complete graph, input interestVertices must contain the number of vertices of interest" << std::endl;
+				std::cout << "Inputs `source' and `sink' cannot be negative" << std::endl;
 				return false;
 			}
-			if(minInterest != 2)
+
+			if(variableMap.count("graphFile") == 1)
 			{
-				std::cout << "There must be two vertices of interest" << std::endl;
-				return false;
+				bool successful = false;
+				std::string message;
+				try
+				{
+					out = Context::fromFile(variableMap["graphFile"].as<std::string>(), successful, source, sink, message, std::move(distribution), threshold);
+				}
+				catch(std::runtime_error& err)
+				{
+					message = err.what();
+					successful = false;
+				}
+				if(!successful)
+				{
+					std::cout << "Error reading graphml file. " << message << ". Exiting..." << std::endl;
+					return false;
+				}
 			}
-			out = Context::completeContext(nVertices, minInterest, std::move(distribution), threshold);
+			else if(variableMap.count("gridGraph") == 1)
+			{
+				int gridDimension = variableMap["gridGraph"].as<int>();
+				if(gridDimension <= 0)
+				{
+					std::cout << "Input `gridGraph' must be a positive integer" << std::endl;
+					return false;
+				}
+				if(source >= gridDimension*gridDimension || sink >= gridDimension*gridDimension)
+				{
+					std::cout << "Inputs `source' and `sink' must be between 0 and (nVertices - 1) inclusive" << std::endl;
+					return false;
+				}
+				out = Context::gridContext(gridDimension, source, sink, std::move(distribution), threshold);
+			}
 		}
 		return true;
 	}

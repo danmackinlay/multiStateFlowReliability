@@ -103,7 +103,7 @@ namespace multistateTurnip
 			}
 			else thresholdProbability += i->second;
 		}
-		truncatedData.push_back(std::make_pair(newThreshold, thresholdProbability));
+		if(thresholdProbability > 0) truncatedData.push_back(std::make_pair(newThreshold, thresholdProbability));
 		return capacityDistribution(truncatedData);
 	}
 	double capacityDistribution::sampleConditionalLessThan(boost::mt19937& randomSource, double smaller) const

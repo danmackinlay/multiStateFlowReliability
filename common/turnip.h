@@ -19,7 +19,7 @@ namespace multistateTurnip
 		boost::mt19937 randomSource;
 		bool useAllPointsMaxFlow;
 		int allPointsMaxFlowIncrement;
-		mpfr_class estimateFirstMoment, estimateSecondMoment, varianceEstimate, sqrtVarianceEstimate, relativeErrorEstimate;
+		mpfr_class firstMomentSingleSample, secondMomentSingleSample, varianceSingleSample, sqrtVarianceOfEstimate, relativeErrorEstimate;
 	};
 	void turnip(turnipArgs& args);
 }

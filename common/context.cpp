@@ -76,9 +76,8 @@ namespace multistateTurnip
 	Context& Context::operator=(Context&& other)
 	{
 		graph.swap(other.graph);
-		interestVertices.swap(other.interestVertices);
-		vertexPositions.swap(other.vertexPositions);
-		edgeDistances.swap(other.edgeDistances);
+		source = other.source;
+		sink = other.sink;
 		distribution = std::move(other.distribution);
 
 		edgeResidualCapacityVector.swap(other.edgeResidualCapacityVector);
@@ -89,15 +88,13 @@ namespace multistateTurnip
 		distanceVector.swap(other.distanceVector);
 
 		std::swap(threshold, other.threshold);
-		std::swap(nEdges, other.nEdges);
 		return *this;
 	}
 	Context::Context(Context&& other)
 	{
 		graph.swap(other.graph);
-		interestVertices.swap(other.interestVertices);
-		vertexPositions.swap(other.vertexPositions);
-		edgeDistances.swap(other.edgeDistances);
+		source = other.source;
+		sink = other.sink;
 		distribution = std::move(other.distribution);
 
 		edgeResidualCapacityVector.swap(other.edgeResidualCapacityVector);
@@ -108,28 +105,23 @@ namespace multistateTurnip
 		distanceVector.swap(other.distanceVector);
 
 		std::swap(threshold, other.threshold);
-		std::swap(nEdges, other.nEdges);
 	}
-	Context::Context(boost::shared_ptr<const inputGraph> unorderedGraph, boost::shared_ptr<const std::vector<int> > interestVertices, boost::shared_ptr<std::vector<vertexPosition> > vertexPositions, capacityDistribution&& distribution, const mpfr_class& threshold)
-		:interestVertices(interestVertices), vertexPositions(vertexPositions), distribution(std::move(distribution))
+	Context::Context(boost::shared_ptr<const inputGraph> unorderedGraph, int source, int sink, capacityDistribution&& distribution, const mpfr_class& threshold)
+		: source(source), sink(sink), distribution(std::move(distribution))
 	{
-		if(interestVertices->size() != 2)
-		{
-			throw std::runtime_error("Two interest vertices must be entered");
-		}
-
 		std::size_t nVertices = boost::num_vertices(*unorderedGraph);
-		int minVertexIndex = *std::min_element(interestVertices->begin(), interestVertices->end());
-		int maxVertexIndex = *std::max_element(interestVertices->begin(), interestVertices->end());
+		int minVertexIndex = std::min(source, sink);
+		int maxVertexIndex = std::max(source, sink);
 		if(minVertexIndex < 0 || maxVertexIndex >= (int)nVertices)
 		{
 			throw std::runtime_error("Input interestVertices was out of range");
 		}
-		nEdges = boost::num_edges(*unorderedGraph);
+		std::size_t nEdges = boost::num_edges(*unorderedGraph);
 		
+		//Double the number of edges because these are going to be used on the directed version
 		edgeResidualCapacityVector.resize(2*nEdges);
 		vertexPredecessorVector.resize(2*nEdges);
-		capacityVector.resize(2*nEdges, 1);
+		capacityVector.resize(2*nEdges);
 		vertexPredecessorVector.resize(2*nEdges);
 		colorVector.resize(2*nEdges);
 		distanceVector.resize(2*nEdges);
@@ -138,11 +130,8 @@ namespace multistateTurnip
 		{
 			throw std::runtime_error("Input graph must contain a single connected component");
 		}
-		if(nVertices != vertexPositions->size())
-		{
-			throw std::runtime_error("Vertex position data had the wrong size");
-		}
 
+		//Construct a new graph, where the edge indices are assigned consecutively
 		boost::shared_ptr<internalGraph> orderedGraph(new internalGraph(nVertices));
 		inputGraph::edge_iterator start, end;
 		boost::tie(start, end) = boost::edges(*unorderedGraph);
@@ -155,54 +144,9 @@ namespace multistateTurnip
 
 		graph = orderedGraph;
 		constructDirectedGraph();
-		constructEdgeDistances();
-	}
-	void Context::constructEdgeDistances()
-	{
-		const std::size_t nEdges = boost::num_edges(*graph);
-		const std::size_t nVertices = boost::num_vertices(*graph);
-		boost::scoped_array<int> vertexDistances(new int[nVertices * nVertices]);
-		int* vertexDistancePtr = vertexDistances.get();
-
-		ContextImpl::twoDArray tmp;
-		tmp.base = vertexDistances.get();
-		tmp.dim = nVertices;
-
-		ContextImpl::constant_property_map_int<Context::inputGraph::edge_descriptor, 1> edgeWeights;
-		boost::johnson_all_pairs_shortest_paths(*graph, tmp, boost::weight_map(edgeWeights));
-		
-		
-		edgeDistances = boost::shared_array<int>(new int[nEdges * nEdges]);
-		int* edgeDistancePtr = edgeDistances.get();
-		memset(edgeDistancePtr, 0, (int)(sizeof(int)*nEdges*nEdges));
-
-		Context::internalGraph::edge_iterator currentFirst, end;
-		boost::tie(currentFirst, end) = boost::edges(*graph);
-		while(currentFirst != end)
-		{
-			int firstIndex = boost::get(boost::edge_index, *graph, *currentFirst);
-
-			Context::internalGraph::edge_iterator currentSecond = currentFirst;
-			currentSecond++;
-			while(currentSecond != end)
-			{
-				int secondIndex = boost::get(boost::edge_index, *graph, *currentSecond);
-				int possibilities[4] = 
-				{
-					vertexDistancePtr[currentFirst->m_source + nVertices*currentSecond->m_source], 
-					vertexDistancePtr[currentFirst->m_source + nVertices*currentSecond->m_target], 
-					vertexDistancePtr[currentFirst->m_target + nVertices*currentSecond->m_target], 
-					vertexDistancePtr[currentFirst->m_target + nVertices*currentSecond->m_source]
-				};
-				
-				edgeDistancePtr[secondIndex + nEdges * firstIndex] = edgeDistancePtr[firstIndex + nEdges * secondIndex] = *std::min_element(possibilities + 0, possibilities + 4)+1;
-				currentSecond++;
-			}
-			currentFirst++;
-		}
 	}
 	Context::Context()
-		:graph(NULL), directedGraph(NULL), vertexPositions(NULL), nEdges(0)
+		:graph(NULL), directedGraph(NULL)
 	{}
 	Context Context::emptyContext()
 	{
@@ -219,88 +163,57 @@ namespace multistateTurnip
 		boost::shared_ptr<const Context::internalDirectedGraph> constDirectedGraph = boost::static_pointer_cast<const Context::internalDirectedGraph>(directedGraph);
 		result.directedGraph.swap(constDirectedGraph);
 
-		boost::shared_ptr<std::vector<int> > interestVertices(new std::vector<int>(2));
-		(*interestVertices)[0] = 0; (*interestVertices)[1] = 1;
-		boost::shared_ptr<const std::vector<int> > constInterestVertices = boost::static_pointer_cast<const std::vector<int> >(interestVertices);
-		result.interestVertices.swap(constInterestVertices);
-
-		boost::shared_ptr<std::vector<vertexPosition> > vertexPositions(new std::vector<vertexPosition>(2));
-		(*vertexPositions)[0] = vertexPosition(vertexPosition::first_type(0.0), vertexPosition::second_type(0.0)); (*vertexPositions)[1] = vertexPosition(vertexPosition::first_type(10.0), vertexPosition::second_type(0.0));
-		boost::shared_ptr<const std::vector<vertexPosition> > constVertexPositions = boost::static_pointer_cast<const std::vector<vertexPosition> >(vertexPositions);
-		result.vertexPositions.swap(constVertexPositions);
+		result.source = 0;
+		result.sink = 1;
 		
-		boost::shared_array<int> edgeDistances(new int[4]);
-		edgeDistances[0] = edgeDistances[3] = 0;
-		edgeDistances[1] = edgeDistances[2] = 1;
-		result.edgeDistances.swap(edgeDistances);
-
 		result.edgeResidualCapacityVector.resize(2);
 		result.capacityVector.resize(2);
 		result.vertexPredecessorVector.resize(2);
 		result.colorVector.resize(2);
 		result.distanceVector.resize(2);
 
-		result.nEdges = 0;
-
 		return result;
 	}
-	Context Context::gridContext(int gridDimension, boost::shared_ptr<const std::vector<int> > interestVertices, capacityDistribution&& distribution, const mpfr_class& threshold)
+	Context Context::gridContext(int gridDimension, int source, int sink, capacityDistribution&& distribution, const mpfr_class& threshold)
 	{
-		if((*interestVertices).size() != 2)
-		{
-			throw std::runtime_error("Two interest vertices must be entered");
-		}
-
-		boost::shared_ptr<std::vector<vertexPosition> > vertexPositions(new std::vector<vertexPosition>(gridDimension * gridDimension));
 		boost::shared_ptr<Context::inputGraph> graph(new Context::inputGraph(gridDimension * gridDimension));
 		for(int i = 0; i < gridDimension; i++)
 		{
 			for(int j = 0; j < gridDimension; j++)
 			{
-				(*vertexPositions)[i + j * gridDimension] = vertexPosition((float)i*100, (float)j*100);
 				if(i != gridDimension - 1) boost::add_edge(i + j*gridDimension, i + 1 +j*gridDimension, *graph);
 				if(j != gridDimension - 1) boost::add_edge(i + j*gridDimension, i + (j+1)*gridDimension, *graph);
 			}
 		}
-		return Context(graph, interestVertices, vertexPositions, std::move(distribution), threshold);
+		return Context(graph, source, sink, std::move(distribution), threshold);
 	}
-	Context Context::completeContext(int nVertices, int nInterestVertices, capacityDistribution&& distribution, const mpfr_class& threshold)
+	Context Context::completeContext(int nVertices, capacityDistribution&& distribution, const mpfr_class& threshold)
 	{
-		if(nInterestVertices != 2)
-		{
-			throw std::runtime_error("Input interestVertices must be 2");
-		}
-		boost::shared_ptr<std::vector<vertexPosition> > vertexPositions(new std::vector<vertexPosition>(nVertices));
 		boost::shared_ptr<Context::inputGraph> graph(new Context::inputGraph(nVertices));
 
-		boost::shared_ptr<std::vector<int> > interestVertices(new std::vector<int>(nInterestVertices));
-		std::copy(boost::counting_iterator<int>(1), boost::counting_iterator<int>(nInterestVertices), (*interestVertices).begin());
-
-		const double pi = 3.14159265359;
 		for(int i = 0; i < nVertices; i++)
 		{
-			(*vertexPositions)[i] = vertexPosition((float)cos(2*pi*i/nVertices), (float)sin(2*pi*i/nVertices));
 			for(int j = i+1; j < nVertices; j++)
 			{
 				boost::add_edge(i, j, *graph);
 			}
 		}
 
-		return Context(graph, interestVertices, vertexPositions, std::move(distribution), threshold);
+		return Context(graph, 0, 1, std::move(distribution), threshold);
 	}
 	const Context::internalGraph& Context::getGraph() const
 	{
 		return *graph;
 	}
-	const std::vector<int>& Context::getInterestVertices() const
+	int Context::getSource() const
 	{
-		return *interestVertices;
+		return source;
 	}
-	const std::vector<Context::vertexPosition>& Context::getVertexPositions() const
+	int Context::getSink() const
 	{
-		return *vertexPositions;
+		return sink;
 	}
-	Context Context::fromFile(std::string path, bool& successful, boost::shared_ptr<const std::vector<int> > interestVertices, std::string& message, capacityDistribution&& distribution, const mpfr_class& threshold)
+	Context Context::fromFile(std::string path, bool& successful, int source, int sink, std::string& message, capacityDistribution&& distribution, const mpfr_class& threshold)
 	{
 		std::ifstream input(path);
 		if(!input.is_open())
@@ -320,31 +233,15 @@ namespace multistateTurnip
 
 		boost::read_graphml(input, *graph, properties);
 
-		boost::shared_ptr<std::vector<vertexPosition> > vertexPositions(new std::vector<vertexPosition>());
-		for(auto xIterator = xProperty.storage_begin(), yIterator = yProperty.storage_begin(); xIterator != xProperty.storage_end(); xIterator++, yIterator++)
-		{
-			vertexPositions->push_back(vertexPosition(*xIterator, *yIterator));
-		}
-
 		successful = true;
 
-		int maxInterest = *std::max_element(interestVertices->begin(), interestVertices->end());
-		int minInterest = *std::min_element(interestVertices->begin(), interestVertices->end());
-		if(minInterest < 0 || maxInterest >= (int)boost::num_vertices(*graph))
+		if(std::min(source, sink) < 0 || std::max(source, sink) >= (int)boost::num_vertices(*graph))
 		{
 			successful = false;
 			message = "Invalid vertex indices entered for input interestVertices";
 			return Context();
 		}
-		if(interestVertices->size() != 2)
-		{
-			throw std::runtime_error("Two interest vertices must be entered");
-		}
-		return Context(graph, interestVertices, vertexPositions, std::move(distribution), threshold);
-	}
-	const int* Context::getEdgeDistances() const
-	{
-		return edgeDistances.get();
+		return Context(graph, source, sink, std::move(distribution), threshold);
 	}
 	const capacityDistribution& Context::getDistribution() const
 	{
@@ -388,11 +285,7 @@ namespace multistateTurnip
 	{
 		return capacityVector;
 	}
-	std::size_t Context::getNEdges() const
-	{
-		return nEdges;
-	}
-	double Context::getMaxFlow(std::vector<double>& capacities, Context::internalGraph::vertex_descriptor source, Context::internalGraph::vertex_descriptor sink) const
+/*	double Context::getMaxFlow(std::vector<double>& capacities, Context::internalGraph::vertex_descriptor source, Context::internalGraph::vertex_descriptor sink) const
 	{
 		typedef boost::property_map<Context::internalDirectedGraph, boost::edge_index_t>::const_type edgeIndexMapType;
 		typedef boost::property_map<Context::internalDirectedGraph, boost::vertex_index_t>::const_type vertexIndexMapType;
@@ -414,5 +307,5 @@ namespace multistateTurnip
 	double Context::getMaxFlow(std::vector<double>& capacities) const
 	{
 		return getMaxFlow(capacities, (*interestVertices)[0], (*interestVertices)[1]);
-	}
+	}*/
 }

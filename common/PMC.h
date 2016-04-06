@@ -12,7 +12,7 @@ namespace multistateTurnip
 			:context(context)
 		{}
 		const Context& context;
-		mpfr_class estimateFirstMoment, estimateSecondMoment, varianceEstimate, sqrtVarianceEstimate, relativeErrorEstimate;
+		mpfr_class firstMomentSingleSample, secondMomentSingleSample, varianceSingleSample, sqrtVarianceOfEstimate, relativeErrorEstimate;
 		int n;
 		double threshold;
 		std::function<void(std::string&)> outputFunc;
