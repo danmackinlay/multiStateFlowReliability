@@ -5,8 +5,8 @@
 #$ -pe threaded 1
 #$ -w e
 #$ -l h_vmem=5G
-#$ -l h_rt=01:00:00
-#$ -l s_rt=00:59:50
+#$ -l h_rt=04:00:00
+#$ -l s_rt=03:59:50
 #$ -v SCENARIO_INDEX
 #$ -v UPPER_LIMIT
 #$ -v LOWER_LIMIT

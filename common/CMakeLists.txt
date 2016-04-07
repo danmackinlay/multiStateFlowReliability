@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
-set(Headers arguments.h argumentsMPFR.h capacityDistribution.h computeConditionalProb.h context.h includeMPFR.h includeMPIRXX.h allPointsMaxFlow.hpp PMC.h turnip.h crudeMC.h edmondsKarp.h generalisedSplittingFixedEffort.h edmondsKarp.h updateMaxFlowIncremental.h updateFlowIncremental.h)
-set(CppFiles arguments.cpp argumentsMPFR.cpp capacityDistribution.cpp context.cpp computeConditionalProb.cpp PMC.cpp turnip.cpp crudeMC.cpp edmondsKarp.cpp generalisedSplittingFixedEffort.cpp edmondsKarp.cpp updateMaxFlowIncremental.cpp updateFlowIncremental.cpp)
+set(Headers arguments.h argumentsMPFR.h capacityDistribution.h computeConditionalProb.h context.h includeMPFR.h includeMPIRXX.h allPointsMaxFlow.hpp PMC.h turnip.h crudeMC.h edmondsKarp.h generalisedSplittingFixedEffort.h edmondsKarp.h updateMaxFlowIncremental.h updateFlowIncremental.h resampleCapacities.h generalisedSplittingFixedFactors.h)
+set(CppFiles arguments.cpp argumentsMPFR.cpp capacityDistribution.cpp context.cpp computeConditionalProb.cpp PMC.cpp turnip.cpp crudeMC.cpp edmondsKarp.cpp generalisedSplittingFixedEffort.cpp edmondsKarp.cpp updateMaxFlowIncremental.cpp updateFlowIncremental.cpp resampleCapacities.cpp generalisedSplittingFixedFactors.cpp)
 add_library(multiStateCommon STATIC ${CppFiles} ${Headers})
 target_link_libraries(multiStateCommon PUBLIC ${Boost_LIBRARIES} mpfr)
 target_include_directories(multiStateCommon PUBLIC ${Boost_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})

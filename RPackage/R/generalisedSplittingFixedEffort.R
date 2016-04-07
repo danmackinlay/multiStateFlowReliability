@@ -27,5 +27,5 @@ generalisedSplittingFixedEffort <- function(graph, capacityMatrix, n, levels, se
 	{
 		stop("Input graph must have class \"igraph\", \"graphAM\" or \"graphNEL\"")
 	}
-	return(new("generalisedSplittingFixedEffortResult", call = match.call(), start = start, end = end, n = as.integer(n), capacity = capacityMatrix, levels = levels, interestVertices = as.integer(interestVertices), seed = as.integer(seed), estimate = result))
+	return(new("generalisedSplittingFixedEffortResult", call = match.call(), start = start, end = end, n = as.integer(n), capacity = capacityMatrix, levels = levels, interestVertices = as.integer(interestVertices), seed = as.integer(seed), estimate = result$estimate, levelProbabilities = result$levelProbabilities))
 }

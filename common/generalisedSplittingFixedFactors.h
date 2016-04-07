@@ -1,12 +1,11 @@
-#ifndef GENERALIZED_SPLITTING_FIXED_EFFORT_HEADER_GUARD
-#define GENERALIZED_SPLITTING_FIXED_EFFORT_HEADER_GUARD
+#ifndef GENERALIZED_SPLITTING_FIXED_FACTORS_HEADER_GUARD
+#define GENERALIZED_SPLITTING_FIXED_FACTORS_HEADER_GUARD
 #include "context.h"
-#include <functional>
 namespace multistateTurnip
 {
-	struct generalisedSplittingFixedEffortArgs
+	struct generalisedSplittingFixedFactorsArgs
 	{
-		generalisedSplittingFixedEffortArgs(const Context& context)
+		generalisedSplittingFixedFactorsArgs(const Context& context)
 			:context(context)
 		{}
 		std::vector<double> levels;
@@ -15,9 +14,10 @@ namespace multistateTurnip
 		boost::mt19937 randomSource;
 		double estimate;
 		std::vector<double> levelProbabilities;
+		std::vector<int> splittingFactors;
 		std::function<void(unsigned long, unsigned long)> progressFunction;
 		std::function<void(std::string&)> outputFunc;
 	};
-	void generalisedSplittingFixedEffort(generalisedSplittingFixedEffortArgs& args);
+	void generalisedSplittingFixedFactors(generalisedSplittingFixedFactorsArgs& args);
 }
 #endif

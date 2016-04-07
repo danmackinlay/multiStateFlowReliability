@@ -5,82 +5,14 @@
 #include <boost/range/algorithm/random_shuffle.hpp>
 #include <boost/random/random_number_generator.hpp>
 #include <iostream>
+#include "resampleCapacities.h"
 namespace multistateTurnip
 {
-	struct resampleCapacitiesArgs
-	{
-		resampleCapacitiesArgs(const Context& context, edmondsKarpMaxFlowScratch& scratch, boost::mt19937& randomSource)
-			: context(context), scratch(scratch), updateMaxFlowArgs(context.getDirectedGraph(), scratch), updateFlowArgs(context.getDirectedGraph(), scratch), randomSource(randomSource)
-		{}
-		const Context& context;
-		double* capacity, *flow, *residual;
-		double oldLevel;
-		std::vector<double> working1, working2;
-		int nEdges, nDirectedEdges;
-		int source, sink;
-		edmondsKarpMaxFlowScratch& scratch;
-		double* maxFlow;
-		//In this case we just want to update the max flow
-		updateMaxFlowIncrementalArgs updateMaxFlowArgs;
-		//Here we want to update the max flow AND the flow and residual
-		updateFlowIncrementalArgs updateFlowArgs;
-		boost::mt19937& randomSource;
-	};
-	void resampleCapacities(resampleCapacitiesArgs& args)
-	{
-		const capacityDistribution& capacity = args.context.getDistribution();
-		const Context::internalDirectedGraph& graph = args.context.getDirectedGraph();
-
-		updateMaxFlowIncrementalArgs& updateMaxArgs = args.updateMaxFlowArgs;
-		updateMaxArgs.nDirectedEdges = args.nDirectedEdges;
-		updateMaxArgs.capacity = args.capacity;
-		updateMaxArgs.flow = args.flow;
-		updateMaxArgs.residual = args.residual;
-		updateMaxArgs.source = args.source;
-		updateMaxArgs.sink = args.sink;
-
-		updateFlowIncrementalArgs& updateArgs = args.updateFlowArgs;
-		updateArgs.source = args.source;
-		updateArgs.sink = args.sink;
-		updateArgs.flow = args.flow;
-		updateArgs.residual = args.residual;
-		updateArgs.capacity = args.capacity;
-		updateArgs.nDirectedEdges = args.nDirectedEdges;
-
-		Context::internalDirectedGraph::edge_iterator current, end;
-		boost::tie(current, end) = boost::edges(graph);
-		for(; current != end; current++)
-		{
-			//We only want every second edge, because they come in pairs of edge / reverse edge
-			current++;
-			int edgeIndex = boost::get(boost::edge_index, graph, *current);
-			//First work out whether there is a constraint on the flow of this edge.
-			double thresholdFlowThisEdge = args.capacity[edgeIndex] + args.oldLevel - *args.maxFlow;
-			double flowAfterIncrease;
-			updateMaxArgs.newCapacity = thresholdFlowThisEdge;
-			updateMaxArgs.edge = *current;
-			updateMaxFlowIncremental(updateMaxArgs, *args.maxFlow, flowAfterIncrease);
-			double newCapacity;
-			//In this case we need to resample the current edge conditional on being smaller than a certain value
-			if(flowAfterIncrease >= args.oldLevel)
-			{
-				newCapacity = capacity.sampleConditionalLessThan(args.randomSource, thresholdFlowThisEdge);
-			}
-			//In this case we can resample it unconditionally. 
-			else
-			{
-				newCapacity = capacity(args.randomSource);
-			}
-			updateArgs.newCapacity = newCapacity;
-			updateArgs.edge = *current;
-			double newMaxFlow;
-			updateFlowIncremental(updateArgs, *args.maxFlow, newMaxFlow);
-			*args.maxFlow = newMaxFlow;
-		}
-	}
 	void generalisedSplittingFixedEffort(generalisedSplittingFixedEffortArgs& args)
 	{
 		args.estimate = 1;
+		args.levelProbabilities.clear();
+
 		edmondsKarpMaxFlowScratch scratch;
 		const Context::internalDirectedGraph& graph = args.context.getDirectedGraph();
 		const capacityDistribution& distribution = args.context.getDistribution();
@@ -118,9 +50,11 @@ namespace multistateTurnip
 			}
 		}
 		args.estimate = (double)samplesLessThanFlow / (double)args.n;
+		args.levelProbabilities.push_back(args.estimate);
 		if(samplesLessThanFlow == 0)
 		{
 			args.estimate = 0;
+			args.levelProbabilities.insert(args.levelProbabilities.end(), args.levels.size(), 0);
 			return;
 		}
 		int copies = args.n / samplesLessThanFlow;
@@ -186,7 +120,8 @@ namespace multistateTurnip
 
 			if(samplesLessThanFlow == 0)
 			{
-				args.estimate = 0; 
+				args.estimate = 0;
+				args.levelProbabilities.insert(args.levelProbabilities.end(), args.levels.size() - args.levelProbabilities.size(), 0);
 				return;
 			}
 			copies = args.n / samplesLessThanFlow;
@@ -195,6 +130,7 @@ namespace multistateTurnip
 
 			//Update the estimate
 			args.estimate *= (double)samplesLessThanFlow / (double)args.n;
+			args.levelProbabilities.push_back((double)samplesLessThanFlow / (double)args.n);
 
 			oldLevel = newLevel;
 		}

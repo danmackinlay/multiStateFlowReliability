@@ -22,6 +22,10 @@ namespace multistateTurnip
 	SEXP generalisedSplittingFixedEffort_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp);
 	SEXP generalisedSplittingFixedEffort_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp);
 	SEXP generalisedSplittingFixedEffort_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp);
+	SEXP generalisedSplittingFixedFactors_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
+	SEXP generalisedSplittingFixedFactors_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
+	SEXP generalisedSplittingFixedFactors_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
+
 }
 R_CallMethodDef callMethods[] = 
 {
@@ -36,7 +40,10 @@ R_CallMethodDef callMethods[] =
 	{"turnip_graphAM", (DL_FUNC)&multistateTurnip::turnip_graphAM, 8},
 	{"generalisedSplittingFixedEffort_igraph", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedEffort_igraph, 7},
 	{"generalisedSplittingFixedEffort_graphNEL", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedEffort_graphNEL, 7},
-	{"generalisedSplittingFixedEffort_graphAM", (DL_FUNC)&multistateTurnip::generalisedSplittingFIxedEffort_graphAM, 7},
+	{"generalisedSplittingFixedEffort_graphAM", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedEffort_graphAM, 7},
+	{"generalisedSplittingFixedFactors_igraph", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedFactors_igraph, 8},
+	{"generalisedSplittingFixedFactors_graphNEL", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedFactors_graphNEL, 8},
+	{"generalisedSplittingFixedFactors_graphAM", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedFactors_graphAM, 8},
 	{NULL, NULL, 0}
 };
 RcppExport void R_init_multiStateFlowReliability(DllInfo *info)

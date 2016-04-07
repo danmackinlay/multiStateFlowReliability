@@ -16,5 +16,6 @@ Collate:
 	'pmc.R'
 	'crudeMC.R'
 	'onLoad.R'
-	'generalisedSplitting.R'
+	'generalisedSplittingFixedEffort.R'
+	'generalisedSplittingFixedFactors.R'
 	'Rcpp_exceptions.R'
