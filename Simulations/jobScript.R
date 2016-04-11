@@ -127,7 +127,7 @@ if(method == "crudeMC")
 		file.rename(from = tmpFile, to = outputFile)
 		counter <- counter + 1
 	}
-} else if(method == "gs")
+} else if(method == "gsFE")
 {
 	counter <- 1
 	if(file.exists(outputFile))
@@ -135,11 +135,38 @@ if(method == "crudeMC")
 		load(outputFile)
 		counter <- length(results)+1
 	} else results <- list()
-	levels <- maxPossibleFlow:demand
+	if(maxPossibleFlow - demand %% 2 == 0)
+	{
+		levels <- seq(maxPossibleFlow, demand, -2)
+	} else levels <- seq(maxPossibleFlow-1, demand, -2)
 	while(counter < 100)
 	{
-		results[[counter]] <- generalisedSplitting(graph = graph, capacityMatrix = capacityMatrix, n = n, levels = levels, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, verbose=FALSE)
+		results[[counter]] <- generalisedSplittingFixedEffort(graph = graph, capacityMatrix = capacityMatrix, n = n, levels = levels, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, verbose=FALSE)
 		save(results, file = tmpFile)
+		file.rename(from = tmpFile, to = outputFile)
+		counter <- counter + 1
+	}
+} else if(method == "gsFS")
+{
+	counter <- 1
+	if(maxPossibleFlow - demand %% 2 == 0)
+	{
+		levels <- seq(maxPossibleFlow, demand, -2)
+	} else levels <- seq(maxPossibleFlow-1, demand, -2)
+	if(file.exists(outputFile))
+	{
+		load(outputFile)
+		counter <- length(results)+1
+	} else 
+	{
+		results <- list()
+		pilot <- generalisedSplittingFixedEffort(graph = graph, capacityMatrix = capacityMatrix, n = n, levels = levels, seed = SCENARIO_INDEX + counter * 100000 - 1, interestVertices = interestVertices, verbose=FALSE)
+		factors <- round(tail(1/pilot@levelProbabilities, -1))
+	}
+	while(counter < 100)
+	{
+		results[[counter]] <- generalisedSplittingFixedFactors(graph = graph, capacityMatrix = capacityMatrix, n = n, levels = levels, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, verbose=FALSE, factors = factors)
+		save(pilot, factors, results, file = tmpFile)
 		file.rename(from = tmpFile, to = outputFile)
 		counter <- counter + 1
 	}

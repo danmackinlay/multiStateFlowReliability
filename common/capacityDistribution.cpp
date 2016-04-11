@@ -75,6 +75,7 @@ namespace multistateTurnip
 		boost::tie(lowerBound, upperBound) = std::equal_range(cumulativeData.begin(), cumulativeData.end(), searchFor, sortSecond);
 		double value;
 		if(lowerBound == cumulativeData.end()) value = cumulativeData.rbegin()->first;
+		else if(lowerBound == cumulativeData.begin()) value = lowerBound->first;
 		else value = (lowerBound-1)->first;
 		return value;
 	}
