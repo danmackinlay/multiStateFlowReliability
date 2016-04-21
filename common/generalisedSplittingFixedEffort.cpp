@@ -15,7 +15,6 @@ namespace multistateTurnip
 
 		edmondsKarpMaxFlowScratch scratch;
 		const Context::internalDirectedGraph& graph = args.context.getDirectedGraph();
-		const capacityDistribution& distribution = args.context.getDistribution();
 		int source = args.context.getSource(), sink = args.context.getSink();
 		std::size_t nEdges = boost::num_edges(graph);
 		std::vector<double> residual(nEdges * args.n, 0), flow(nEdges * args.n, 0), capacity(nEdges * args.n, 0);
@@ -41,6 +40,7 @@ namespace multistateTurnip
 			double* currentSampleFlow = &(flow[sampleCounter*nEdges]);
 			for(int edgeCounter = 0; edgeCounter < (int)(nEdges/2); edgeCounter++)
 			{
+				const capacityDistribution& distribution = args.context.getDistribution(edgeCounter);
 				currentSampleResidual[2*edgeCounter] = currentSampleResidual[2*edgeCounter+1] = currentSampleCapacity[2*edgeCounter] = currentSampleCapacity[2*edgeCounter+1] = distribution(args.randomSource);
 			}
 			edmondsKarpMaxFlow(currentSampleCapacity, currentSampleFlow, currentSampleResidual, graph, source, sink, oldLevel, scratch, maxFlows[sampleCounter]);

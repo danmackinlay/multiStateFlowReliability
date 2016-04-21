@@ -6,18 +6,30 @@ pmc <- function(graph, capacityMatrix, n, threshold, seed, interestVertices, ver
 		{
 			stop("Input `graph' must be undirected")
 		}
+		if(!is.list(capacityMatrix))
+		{
+			capacityMatrix <- replicate(vcount(graph), capacityMatrix, simplify=FALSE)
+		}
 		start <- Sys.time()
 		result <- .Call("pmc_igraph", graph, capacityMatrix, n, threshold, seed, interestVertices, verbose, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()
 	}
 	else if(class(graph) == "graphNEL")
 	{
+		if(!is.list(capacityMatrix))
+		{
+			capacityMatrix <- replicate(length(nodes(graph)), capacityMatrix, simplify=FALSE)
+		}
 		start <- Sys.time()
 		result <- .Call("pmc_graphNEL", graph, capacityMatrix, n, threshold, seed, interestVertices, verbose, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()
 	}
 	else if(class(graph) == "graphAM")
 	{
+		if(!is.list(capacityMatrix))
+		{
+			capacityMatrix <- replicate(length(nodes(graph)), capacityMatrix, simplify=FALSE)
+		}
 		start <- Sys.time()
 		result <- .Call("pmc_graphAM", graph, capacityMatrix, n, threshold, seed, interestVertices, verbose, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()

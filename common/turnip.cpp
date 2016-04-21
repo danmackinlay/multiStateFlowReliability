@@ -12,7 +12,7 @@ namespace multistateTurnip
 	{
 		struct edgeRepairData
 		{
-			int parallelEdgeIndex;
+			int edge, level;
 			double time;
 			mpfr_class rate;
 		};
@@ -24,14 +24,9 @@ namespace multistateTurnip
 	void turnip(turnipArgs& args)
 	{
 		const Context& context = args.context;
-		const capacityDistribution& distribution = context.getDistribution();
 		const Context::internalDirectedGraph& directedGraph = context.getDirectedGraph();
 		const Context::internalGraph& graph = context.getGraph();
 		const std::size_t nVertices = boost::num_vertices(directedGraph), nDirectedEdges = boost::num_edges(directedGraph), nUndirectedEdges = boost::num_edges(graph);
-
-		const std::vector<std::pair<double, double> >& cumulativeData = distribution.getCumulativeData();
-		std::size_t nLevels = distribution.getData().size();
-		std::size_t nParallelEdges = nUndirectedEdges * (cumulativeData.size()-1);
 		int source = context.getSource();
 		int sink = context.getSink();
 
@@ -39,6 +34,9 @@ namespace multistateTurnip
 		allPointsMaxFlow::allPointsMaxFlowScratch<Context::internalDirectedGraph> scratch;
 		//Working data for the edmonds karp call(s)
 		edmondsKarpMaxFlowScratch edmondsKarpScratch;
+
+		std::vector<double> minimumFlows(nUndirectedEdges);
+
 		//All-points max-flow matrix
 		std::vector<double> flowMatrix(nVertices*nVertices);
 		//Get out the vertices for every undirected edge, in a vector. The index in the vector is the edge index of the edge
@@ -53,25 +51,33 @@ namespace multistateTurnip
 			}
 		}
 
-		//Describe all the parrallel edges - In terms of the rate of that parallel edge, 
-		//which original (undirected) edge it belongs to, and which index of parallel edge it is among all the parallel edges for that original edge
-		std::vector<int> originalEdgeIndex;
-		std::vector<int> originalEdgeLevel;
-		std::vector<double> originalRates;
-		std::vector<mpfr_class> originalRatesExact;
+		std::vector<std::vector<double> > originalRates;
+		std::vector<std::vector<mpfr_class> > originalRatesExact;
+		//The edges which have already been seen. This is used to exclude edges which become redundant. 
+		std::vector<std::vector<bool> > alreadySeen(nUndirectedEdges);
+		//The rates for all the different edges, after some edges have been discarded and their rates added to some other edge
+		std::vector<std::vector<mpfr_class> > ratesForEdges(nUndirectedEdges);
 		//The initial rate at the start of each PMC step
 		mpfr_class sumAllRates = 0;
-		//Set up the original edge indices and rates
+		//Set up the edge rates
+		int totalLevels = 0;
 		for(std::size_t i = 0; i < nUndirectedEdges; i++)
 		{
+			std::vector<double>& currentEdgeRates = originalRates[i];
+			std::vector<mpfr_class>& currentEdgeRatesExact = originalRatesExact[i];
+			const capacityDistribution& currentEdgeDistribution = args.context.getDistribution(i);
+			const std::vector<std::pair<double, double> >& cumulativeData = currentEdgeDistribution.getCumulativeData();
+			std::size_t nLevels = currentEdgeDistribution.getData().size();
+			minimumFlows[i] = cumulativeData.front().first;
+			totalLevels += nLevels - 1;
 			mpfr_class cumulativeRates = 0;
-			originalEdgeIndex.insert(originalEdgeIndex.end(), cumulativeData.size()-1, (int)i);
-			originalEdgeLevel.insert(originalEdgeLevel.end(), boost::counting_iterator<int>(0), boost::counting_iterator<int>((int)cumulativeData.size()-1));
+			alreadySeen[i].resize(nLevels);
+			ratesForEdges[i].resize(nLevels);
 			for(std::size_t j = 0; j < cumulativeData.size()-1; j++)
 			{
 				mpfr_class newRate = -boost::multiprecision::log(mpfr_class(cumulativeData[cumulativeData.size() - j - 1].second)) - cumulativeRates;
-				originalRatesExact.push_back(newRate);
-				originalRates.push_back((double)newRate);
+				currentEdgeRatesExact.push_back(newRate);
+				currentEdgeRates.push_back((double)newRate);
 				cumulativeRates += newRate;
 				sumAllRates += newRate;
 			}
@@ -88,35 +94,54 @@ namespace multistateTurnip
 		std::vector<mpfr_class> ratesForPMC;
 		//Repair time vector
 		std::vector<turnipPrivate::edgeRepairData> repairTimes;
-		repairTimes.reserve(nParallelEdges);
-		//The edges which have already been seen. This is used to exclude edges which become redundant. 
-		std::vector<bool> alreadySeen(nParallelEdges);
+		repairTimes.reserve(totalLevels);
 		//Only warn about stability once
 		bool warnedStability = false;
-		//The rates for all the different edges, after some edges have been discarded and their rates added to some other edge
-		std::vector<mpfr_class> ratesForEdges(nParallelEdges);
 
 		//We store the per edge repair times seperately to start with, for the purposes of stripping out stuff that's not going to be important
-		std::vector<double> perEdgeRepairTimes(nLevels - 1);
+		std::vector<double> perEdgeRepairTimes;
 
 		std::vector<mpfr_class> computeConditionalProbScratch;
+
+		//Work out the minimum possible flow
+		double minimumPossibleFlow = 0;
+		std::copy(minimumFlows.begin(), minimumFlows.end(), capacityVector.begin());
+		std::copy(minimumFlows.begin(), minimumFlows.end(), residualVector.begin());
+		std::fill(flowVector.begin(), flowVector.end(), 0);
+		edmondsKarpMaxFlow(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, edmondsKarpScratch, minimumPossibleFlow);
+		if(minimumPossibleFlow >= args.threshold)
+		{
+			args.firstMomentSingleSample = 1;
+			args.secondMomentSingleSample = 1;
+			args.varianceSingleSample = 0;
+			args.sqrtVarianceOfEstimate = 0;
+			args.relativeErrorEstimate = 0;
+			return;
+		}
 		for(int i = 0; i < args.n; i++)
 		{
 			repairTimes.clear();
-			std::fill(ratesForEdges.begin(), ratesForEdges.end(), 0);
 			//Simulate permutation via the repair times
 			for(int k = 0; k < (int)nUndirectedEdges; k++)
 			{
+				std::fill(ratesForEdges[k].begin(), ratesForEdges[k].end(), 0);
+
+				std::vector<double>& currentEdgeRates = originalRates[i];
+				std::vector<mpfr_class>& currentEdgeRatesExact = originalRatesExact[i];
+				const capacityDistribution& currentEdgeDistribution = args.context.getDistribution(i);
+				std::size_t nLevels = currentEdgeDistribution.getData().size();
+				perEdgeRepairTimes.resize(nLevels-1);
 				for(int j = 0; j < (int)nLevels - 1; j++)
 				{
-					boost::exponential_distribution<> repairDist(originalRates[k*(nLevels - 1) + j]);
+					boost::exponential_distribution<> repairDist(currentEdgeRates[j]);
 					perEdgeRepairTimes[j] = repairDist(args.randomSource);
 				}
 				//The increase to highest capacity definitely occurs at some point
 				turnipPrivate::edgeRepairData highest;
 				highest.time = perEdgeRepairTimes[0];
-				highest.rate = originalRatesExact[k*(nLevels - 1) + 0];
-				highest.parallelEdgeIndex = k*(nLevels - 1) + 0;
+				highest.rate = currentEdgeRatesExact[0];
+				highest.level = 0;
+				highest.edge = k;
 				repairTimes.push_back(highest);
 
 				//We can store pointers because there is no reallocation of this vector, due to reserve call
@@ -125,24 +150,25 @@ namespace multistateTurnip
 				{
 					if(perEdgeRepairTimes[j] > minRepairTime->time)
 					{
-						minRepairTime->rate += originalRatesExact[k*(nLevels - 1) + j];
+						minRepairTime->rate += currentEdgeRatesExact[k*(nLevels - 1) + j];
 					}
 					else
 					{
-						ratesForEdges[minRepairTime->parallelEdgeIndex] = minRepairTime->rate;
+						ratesForEdges[k][minRepairTime->level] = minRepairTime->rate;
 						turnipPrivate::edgeRepairData time;
 						time.time = perEdgeRepairTimes[j];
-						time.parallelEdgeIndex = k*(nLevels - 1) + j;
-						time.rate = originalRatesExact[k*(nLevels - 1) + j];
+						time.level = j;
+						time.edge = k;
+						time.rate = currentEdgeRatesExact[j];
 						repairTimes.push_back(time);
 						minRepairTime = &*repairTimes.rbegin();
 					}
 				}
-				ratesForEdges[minRepairTime->parallelEdgeIndex] = minRepairTime->rate;
+				ratesForEdges[k][minRepairTime->level] = minRepairTime->rate;
+				std::fill(alreadySeen[k].begin(), alreadySeen[k].end(), false);
 			}
 			std::sort(repairTimes.begin(), repairTimes.end(), turnipPrivate::timeSorter);
 			//No edges have yet been seen
-			std::fill(alreadySeen.begin(), alreadySeen.end(), false);
 			//The first rate is going to be sumAllRates
 			mpfr_class currentRate = sumAllRates;
 			//which edge in the permutation are we currently looking at?
@@ -151,9 +177,9 @@ namespace multistateTurnip
 			bool insufficientFlow = true;
 			//these are going to be the rates for the matrix exponential
 			ratesForPMC.clear();
-			//The capacities, residual and flow are initially zero
-			std::fill(capacityVector.begin(), capacityVector.end(), 0);
-			std::fill(residualVector.begin(), residualVector.end(), 0);
+			//The capacities and residuals are initially at the minimum possible capacitiies. The residuals are initially zero. 
+			std::copy(minimumFlows.begin(), minimumFlows.end(), capacityVector.begin());
+			std::copy(minimumFlows.begin(), minimumFlows.end(), residualVector.begin());
 			std::fill(flowVector.begin(), flowVector.end(), 0);
 			double currentFlow = 0;
 			//Counter used to make sure we only call the all-points max flow once for every fixed number of steps
@@ -161,26 +187,29 @@ namespace multistateTurnip
 			while(insufficientFlow && repairTimeIterator != repairTimes.end())
 			{
 				//get out the parallel edge index
-				int parallelEdgeIndex = repairTimeIterator->parallelEdgeIndex;
+				int level = repairTimeIterator->level;
 				//Which original edge does this correspond to?
-				int originalEdgeIndexThisLoop = originalEdgeIndex[parallelEdgeIndex];
-				if(!alreadySeen[parallelEdgeIndex])
+				int edge = repairTimeIterator->edge;
+				if(!alreadySeen[edge][level])
 				{
+					const capacityDistribution& currentEdgeDistribution = args.context.getDistribution(edge);
+					const std::vector<std::pair<double, double> >& cumulativeData = currentEdgeDistribution.getCumulativeData();
+
 					//Increase the capacity. Because we always remove edges with lower capacity, we don't need a maximum here
-					double newCapacity = (cumulativeData.rbegin() + originalEdgeLevel[parallelEdgeIndex])->first;
-					double increase = newCapacity - capacityVector[2 * originalEdgeIndexThisLoop];
-					capacityVector[2 * originalEdgeIndexThisLoop] = capacityVector[2 * originalEdgeIndexThisLoop + 1] = newCapacity;
-					residualVector[2 * originalEdgeIndexThisLoop] += increase;
-					residualVector[2 * originalEdgeIndexThisLoop + 1] += increase;
+					double newCapacity = (cumulativeData.rbegin() + level)->first;
+					double increase = newCapacity - capacityVector[2 * edge];
+					capacityVector[2 * edge] = capacityVector[2 * edge + 1] = newCapacity;
+					residualVector[2 * edge] += increase;
+					residualVector[2 * edge + 1] += increase;
 
 					//determine whether or not we've hit the critical threshold
 					edmondsKarpMaxFlow(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, edmondsKarpScratch, currentFlow);
 					insufficientFlow = args.threshold > currentFlow;
 					//Add the current rate
 					ratesForPMC.push_back(currentRate);
-					currentRate -= ratesForEdges[parallelEdgeIndex];
-					alreadySeen[parallelEdgeIndex] = true;
-					//If we now have newThreshold or higher flow between the the vertices for edge originalEdgeIndexThisLoop,
+					currentRate -= ratesForEdges[edge][level];
+					alreadySeen[edge][level] = true;
+					//If we now have newThreshold or higher flow between the the vertices for the edge,
 					//we can discard ALL not yet added edges between those two vertices
 					if (args.useAllPointsMaxFlow)
 					{
@@ -194,26 +223,25 @@ namespace multistateTurnip
 								Context::internalGraph::vertex_descriptor source = current->m_source, target = current->m_target;
 								if (flowMatrix[source + nVertices * target] >= args.threshold)
 								{
-									originalEdgeIndexThisLoop = boost::get(boost::edge_index, graph, *current);
-									int parallelEdgeIndex = (int)(originalEdgeIndexThisLoop*(nLevels - 1));
-									do
+									int edgeToIgnore = boost::get(boost::edge_index, graph, *current);
+									const capacityDistribution& edgeToIgnoreDistribution = args.context.getDistribution(edgeToIgnore);
+									int edgeToIgnoreLevels = edgeToIgnoreDistribution.getData().size();
+									for(int counter = 0; counter < edgeToIgnoreLevels; counter++)
 									{
-										if (originalEdgeIndex[parallelEdgeIndex] != originalEdgeIndexThisLoop) break;
-										if (!alreadySeen[parallelEdgeIndex])
+										if (!alreadySeen[edgeToIgnore][counter])
 										{
-											currentRate -= ratesForEdges[parallelEdgeIndex];
-											alreadySeen[parallelEdgeIndex] = true;
+											currentRate -= ratesForEdges[edgeToIgnore][counter];
+											alreadySeen[edgeToIgnore][counter] = true;
 										}
-										parallelEdgeIndex++;
-									} while (parallelEdgeIndex >= 0 && parallelEdgeIndex < (int)nParallelEdges);
+									}
 								}
 							}
 						}
 					}
 					else 
 					{
-						Context::internalGraph::vertex_descriptor firstVertex = verticesPerEdge[originalEdgeIndexThisLoop].first;
-						Context::internalGraph::vertex_descriptor secondVertex = verticesPerEdge[originalEdgeIndexThisLoop].second;
+						Context::internalGraph::vertex_descriptor firstVertex = verticesPerEdge[edge].first;
+						Context::internalGraph::vertex_descriptor secondVertex = verticesPerEdge[edge].second;
 						//We want to start this computation from the beginning (rather than the incremental version). So the flows start as zero
 						std::fill(flowVectorIncreasedEdge.begin(), flowVectorIncreasedEdge.end(), 0);
 						std::copy(capacityVector.begin(), capacityVector.end(), residualVectorIncreasedEdge.begin());
@@ -221,18 +249,17 @@ namespace multistateTurnip
 						edmondsKarpMaxFlow(&capacityVector.front(), &flowVectorIncreasedEdge.front(), &residualVectorIncreasedEdge.front(), directedGraph, firstVertex, secondVertex, args.threshold, edmondsKarpScratch, flowIncreasedEdge);
 						if(flowIncreasedEdge >= args.threshold)
 						{
-							parallelEdgeIndex = (int)(originalEdgeIndexThisLoop*(nLevels-1));
-							do
+							const capacityDistribution& edgeToIgnoreDistribution = args.context.getDistribution(edge);
+							int edgeToIgnoreLevels = edgeToIgnoreDistribution.getData().size();
+
+							for(int counter = 0; counter < edgeToIgnoreLevels; counter++)
 							{
-								if(originalEdgeIndex[parallelEdgeIndex] != originalEdgeIndexThisLoop) break;
-								if(!alreadySeen[parallelEdgeIndex]) 
+								if(!alreadySeen[edge][counter])
 								{
-									currentRate -= ratesForEdges[parallelEdgeIndex];
-									alreadySeen[parallelEdgeIndex] = true;
+									currentRate -= ratesForEdges[edge][counter];
+									alreadySeen[edge][level] = true;
 								}
-								parallelEdgeIndex++;
 							}
-							while(parallelEdgeIndex >= 0 && parallelEdgeIndex < (int)nParallelEdges);
 						}
 					}
 				}

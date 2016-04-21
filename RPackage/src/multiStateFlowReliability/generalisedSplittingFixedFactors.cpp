@@ -1,11 +1,11 @@
 #include "generalisedSplittingFixedFactors.h"
 #include "createContext.h"
-#include "createCapacityDistribution.h"
+#include "createCapacityDistributions.h"
 #include "Rcpp.h"
 #include "convertGraph.h"
 namespace multistateTurnip
 {
-	SEXP generalisedSplittingFixedFactors(SEXP graph, SEXP capacity, SEXP n_sexp, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp, R_GRAPH_TYPE type)
+	SEXP generalisedSplittingFixedFactors(SEXP graph, SEXP distributions_sexp, SEXP n_sexp, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp, R_GRAPH_TYPE type)
 	{
 	BEGIN_RCPP
 		std::vector<double> levels;
@@ -89,8 +89,8 @@ namespace multistateTurnip
 			};
 		}
 
-		capacityDistribution distribution = createCapacityDistribution(capacity);
-		Context context = createContext(graph, distribution, interestVertices[0]-1, interestVertices[1]-1, levels.back(), type);
+		std::vector<capacityDistribution> distributions = createCapacityDistributions(distributions_sexp);
+		Context context = createContext(graph, distributions, interestVertices[0]-1, interestVertices[1]-1, levels.back(), type);
 
 		generalisedSplittingFixedFactorsArgs args(context);
 		args.randomSource.seed(seed);

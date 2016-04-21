@@ -11,7 +11,7 @@ namespace multistateTurnip
 	{
 		struct edgeRepairData
 		{
-			int parallelEdgeIndex;
+			int edge, level;
 			double time;
 			mpfr_class rate;
 		};
@@ -22,40 +22,40 @@ namespace multistateTurnip
 	}
 	void pmc(pmcArgs& args)
 	{
-		const capacityDistribution& distribution = args.context.getDistribution();
-		const std::vector<std::pair<double, double> >& cumulativeData = distribution.getCumulativeData();
 		const Context::internalDirectedGraph& directedGraph = args.context.getDirectedGraph();
 		const Context::internalGraph& undirectedGraph = args.context.getGraph();
 
 		std::size_t nDirectedEdges = boost::num_edges(directedGraph), nUndirectedEdges = boost::num_edges(undirectedGraph);
-		std::size_t nLevels = distribution.getData().size();
-		std::size_t nParallelEdges = nUndirectedEdges * (nLevels-1);
 		int source = args.context.getSource();
 		int sink = args.context.getSink();
 
 		//Working memory for edmonds Karp
 		edmondsKarpMaxFlowScratch scratch;
 
-		//Describe all the parallel edges - In terms of the rate of that parallel edge, 
-		//which original (undirected) edge it belongs to, and which index of parallel edge it is among all the parallel edges for that original edge
-		std::vector<int> originalEdgeIndex;
-		std::vector<int> originalEdgeLevel;
+		std::vector<double> minimumFlows(nUndirectedEdges);
+
 		//Rates for the parallel edges. Different parallel edges for the same underlying original edge are consecutive
-		std::vector<double> originalRates;
-		std::vector<mpfr_class> originalRatesExact;
-		//Set up the original edge indices and rates
+		std::vector<std::vector<double> > originalRates(nUndirectedEdges);
+		std::vector<std::vector<mpfr_class> > originalRatesExact(nUndirectedEdges);
 		//The initial rate at the start of each PMC step
 		mpfr_class sumAllRates = 0;
+		//Set up the edge rates
+		int totalLevels = 0;
 		for(std::size_t i = 0; i < nUndirectedEdges; i++)
 		{
+			std::vector<double>& currentEdgeRates = originalRates[i];
+			std::vector<mpfr_class>& currentEdgeRatesExact = originalRatesExact[i];
+			const capacityDistribution& currentEdgeDistribution = args.context.getDistribution(i);
+			const std::vector<std::pair<double, double> >& cumulativeData = currentEdgeDistribution.getCumulativeData();
+			std::size_t nLevels = currentEdgeDistribution.getData().size();
+			minimumFlows[i] = cumulativeData.front().first;
+			totalLevels += nLevels-1;
 			mpfr_class cumulativeRates = 0;
-			originalEdgeIndex.insert(originalEdgeIndex.end(), nLevels-1, (int)i);
-			originalEdgeLevel.insert(originalEdgeLevel.end(), boost::counting_iterator<int>(0), boost::counting_iterator<int>((int)nLevels-1));
 			for(std::size_t j = 0; j < nLevels-1; j++)
 			{
 				mpfr_class newRate = -boost::multiprecision::log(mpfr_class(cumulativeData[nLevels - j - 1].second)) - cumulativeRates;
-				originalRatesExact.push_back(newRate);
-				originalRates.push_back((double)newRate);
+				currentEdgeRatesExact.push_back(newRate);
+				currentEdgeRates.push_back((double)newRate);
 				cumulativeRates += newRate;
 				sumAllRates += newRate;
 			}
@@ -71,32 +71,52 @@ namespace multistateTurnip
 		std::vector<mpfr_class> ratesForPMC;
 		//Repair time vector
 		std::vector<pmcPrivate::edgeRepairData> repairTimes;
-		repairTimes.reserve(nParallelEdges);
+		repairTimes.reserve(totalLevels);
 
 		//We store the per edge repair times seperately to start with, for the purposes of stripping out stuff that's not going to be important
-		std::vector<double> perEdgeRepairTimes(nLevels - 1);
+		std::vector<double> perEdgeRepairTimes;
 
 		//Only warn about stability once
 		bool warnedStability = false;
 		std::vector<mpfr_class> computeConditionalProbScratch;
+		//Work out the minimum possible flow
+		double minimumPossibleFlow = 0;
+		std::copy(minimumFlows.begin(), minimumFlows.end(), capacityVector.begin());
+		std::copy(minimumFlows.begin(), minimumFlows.end(), residualVector.begin());
+		std::fill(flowVector.begin(), flowVector.end(), 0);
+		edmondsKarpMaxFlow(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, scratch, minimumPossibleFlow);
+		if(minimumPossibleFlow >= args.threshold)
+		{
+			args.firstMomentSingleSample = 1;
+			args.secondMomentSingleSample = 1;
+			args.varianceSingleSample = 0;
+			args.sqrtVarianceOfEstimate = 0;
+			args.relativeErrorEstimate = 0;
+			return;
+		}
 		for(int i = 0; i < args.n; i++)
 		{
 			repairTimes.clear();
-			double currentFlow = 0;
 			//Simulate permutation via the repair times
 			for(int k = 0; k < (int)nUndirectedEdges; k++)
 			{
+				std::vector<double>& currentEdgeRates = originalRates[i];
+				std::vector<mpfr_class>& currentEdgeRatesExact = originalRatesExact[i];
+				const capacityDistribution& currentEdgeDistribution = args.context.getDistribution(i);
+				std::size_t nLevels = currentEdgeDistribution.getData().size();
+				perEdgeRepairTimes.resize(nLevels-1);
 				//Simulate the times for all the parallel edges, for a single underlying edge
 				for(int j = 0; j < (int)nLevels - 1; j++)
 				{
-					boost::exponential_distribution<> repairDist(originalRates[k*(nLevels - 1) + j]);
+					boost::exponential_distribution<> repairDist(currentEdgeRates[j]);
 					perEdgeRepairTimes[j] = repairDist(args.randomSource);
 				}
 				//The increase to highest capacity definitely occurs at some point
 				pmcPrivate::edgeRepairData highest;
 				highest.time = perEdgeRepairTimes[0];
-				highest.rate = originalRatesExact[k*(nLevels - 1) + 0];
-				highest.parallelEdgeIndex = k*(nLevels - 1) + 0;
+				highest.rate = currentEdgeRates[0];
+				highest.edge = k;
+				highest.level = 0;
 				repairTimes.push_back(highest);
 
 				//We can store pointers because there is no reallocation of this vector, due to reserve call
@@ -106,14 +126,15 @@ namespace multistateTurnip
 				{
 					if(perEdgeRepairTimes[j] > minRepairTime->time)
 					{
-						minRepairTime->rate += originalRatesExact[k*(nLevels - 1) + j];
+						minRepairTime->rate += currentEdgeRatesExact[j];
 					}
 					else
 					{
 						pmcPrivate::edgeRepairData time;
 						time.time = perEdgeRepairTimes[j];
-						time.parallelEdgeIndex = k*(nLevels - 1) + j;
-						time.rate = originalRatesExact[k*(nLevels - 1) + j];
+						time.level = j;
+						time.rate = currentEdgeRatesExact[j];
+						time.edge = k;
 						repairTimes.push_back(time);
 						minRepairTime = &repairTimes.back();
 					}
@@ -128,22 +149,25 @@ namespace multistateTurnip
 			bool insufficientFlow = true;
 			//these are going to be the rates for the matrix exponential
 			ratesForPMC.clear();
-			//The capacities, residuals and flows are initially zero
-			std::fill(capacityVector.begin(), capacityVector.end(), 0);
-			std::fill(residualVector.begin(), residualVector.end(), 0);
+			//The capacities and residuals are initially at the minimum possible capacitiies. The residuals are initially zero. 
+			std::copy(minimumFlows.begin(), minimumFlows.end(), capacityVector.begin());
+			std::copy(minimumFlows.begin(), minimumFlows.end(), residualVector.begin());
 			std::fill(flowVector.begin(), flowVector.end(), 0);
+			double currentFlow = 0;
 			while(insufficientFlow && repairTimeIterator != repairTimes.end())
 			{
 				//get out the parallel edge index
-				int parallelEdgeIndex = repairTimeIterator->parallelEdgeIndex;
+				int level = repairTimeIterator->level;
 				//Which original edge does this correspond to?
-				int originalEdgeIndexThisLoop = originalEdgeIndex[parallelEdgeIndex];
+				int edge = repairTimeIterator->edge;
+				const capacityDistribution& relevantDistribution = args.context.getDistribution(edge);
+				const std::vector<std::pair<double, double> >& cumulativeData = relevantDistribution.getCumulativeData();
 				//Increase the capacity
-				double newCapacity = std::max(capacityVector[2 * originalEdgeIndexThisLoop + 1], (cumulativeData.rbegin() + originalEdgeLevel[parallelEdgeIndex])->first);
-				double increase = newCapacity - capacityVector[2 * originalEdgeIndexThisLoop];
-				capacityVector[2 * originalEdgeIndexThisLoop] = capacityVector[2 * originalEdgeIndexThisLoop + 1] = newCapacity;
-				residualVector[2 * originalEdgeIndexThisLoop] += increase;
-				residualVector[2 * originalEdgeIndexThisLoop + 1] += increase;
+				double newCapacity = std::max(capacityVector[2 * edge + 1], (cumulativeData.rbegin() + level)->first);
+				double increase = newCapacity - capacityVector[2 * edge];
+				capacityVector[2 * edge] = capacityVector[2 * edge + 1] = newCapacity;
+				residualVector[2 * edge] += increase;
+				residualVector[2 * edge + 1] += increase;
 				//determine whether or not we've hit the critical threshold
 				edmondsKarpMaxFlow(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, scratch, currentFlow);
 				insufficientFlow = args.threshold > currentFlow;

@@ -7,18 +7,30 @@ generalisedSplittingFixedEffort <- function(graph, capacityMatrix, n, levels, se
 		{
 			stop("Input `graph' must be undirected")
 		}
+		if(!is.list(capacityMatrix))
+		{
+			capacityMatrix <- replicate(vcount(graph), capacityMatrix, simplify=FALSE)
+		}
 		start <- Sys.time()
 		result <- .Call("generalisedSplittingFixedEffort_igraph", graph, capacityMatrix, n, levels, seed, interestVertices, verbose, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()
 	}
 	else if(class(graph) == "graphNEL")
 	{
+		if(!is.list(capacityMatrix))
+		{
+			capacityMatrix <- replicate(length(nodes(graph)), capacityMatrix, simplify=FALSE)
+		}
 		start <- Sys.time()
 		result <- .Call("generalisedSplittingFixedEffort_graphNEL", graph, capacityMatrix, n, levels, seed, interestVertices, verbose, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()
 	}
 	else if(class(graph) == "graphAM")
 	{
+		if(!is.list(capacityMatrix))
+		{
+			capacityMatrix <- replicate(length(nodes(graph)), capacityMatrix, simplify=FALSE)
+		}
 		start <- Sys.time()
 		result <- .Call("generalisedSplittingFixedEffort_graphAM", graph, capacityMatrix, n, levels, seed, interestVertices, verbose, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()

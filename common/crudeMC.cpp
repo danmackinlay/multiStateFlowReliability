@@ -14,8 +14,6 @@ namespace multistateTurnip
 		
 		std::size_t nEdges = boost::num_edges(undirectedGraph), nDirectedEdges = boost::num_edges(directedGraph);
 		
-		const capacityDistribution& randomCapacityDistribution = context.getDistribution();
-
 		std::vector<double> flowVector(nDirectedEdges), residualVector(nDirectedEdges);
 		args.count = 0;
 		edmondsKarpMaxFlowScratch scratch;
@@ -23,6 +21,7 @@ namespace multistateTurnip
 		{
 			for(std::size_t edgeCounter = 0; edgeCounter < nEdges; edgeCounter++)
 			{
+				const capacityDistribution& randomCapacityDistribution = context.getDistribution(edgeCounter);
 				capacityVector[2*edgeCounter] = capacityVector[2*edgeCounter + 1] = randomCapacityDistribution(args.randomSource);
 			}
 			double flow = 0;

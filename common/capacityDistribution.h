@@ -19,6 +19,7 @@ namespace multistateTurnip
 		capacityDistribution& operator=(capacityDistribution&& other);
 		capacityDistribution();
 		capacityDistribution truncateAtMax(mpfr_class threshold);
+		capacityDistribution createCopy();
 	private:
 		capacityDistribution(const capacityDistribution& other);
 		capacityDistribution& operator=(const capacityDistribution& other);

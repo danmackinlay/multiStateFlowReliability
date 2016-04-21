@@ -7,18 +7,30 @@ turnip <- function(graph, capacityMatrix, n, threshold, seed, interestVertices, 
 		{
 			stop("Input `graph' must be undirected")
 		}
+		if(!is.list(capacityMatrix))
+		{
+			capacityMatrix <- replicate(vcount(graph), capacityMatrix, simplify=FALSE)
+		}
 		start <- Sys.time()
 		result <- .Call("turnip_igraph", graph, capacityMatrix, n, threshold, seed, interestVertices, useAllPointsMaxFlow, allPointsMaxFlowIncrement, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()
 	}
 	else if(class(graph) == "graphNEL")
 	{
+		if(!is.list(capacityMatrix))
+		{
+			capacityMatrix <- replicate(length(nodes(graph)), capacityMatrix, simplify=FALSE)
+		}
 		start <- Sys.time()
 		result <- .Call("turnip_graphNEL", graph, capacityMatrix, n, threshold, seed, interestVertices, useAllPointsMaxFlow, allPointsMaxFlowIncrement, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()
 	}
 	else if(class(graph) == "graphAM")
 	{
+		if(!is.list(capacityMatrix))
+		{
+			capacityMatrix <- replicate(length(nodes(graph)), capacityMatrix, simplify=FALSE)
+		}
 		start <- Sys.time()
 		result <- .Call("turnip_graphAM", graph, capacityMatrix, n, threshold, seed, interestVertices, useAllPointsMaxFlow, allPointsMaxFlowIncrement, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()

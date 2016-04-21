@@ -7,24 +7,24 @@
 extern "C" const char* package_name = "multiStateFlowReliability";
 namespace multistateTurnip
 {
-	SEXP crudeMC_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices);
-	SEXP crudeMC_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices);
-	SEXP crudeMC_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices);
+	SEXP crudeMC_graphNEL(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices);
+	SEXP crudeMC_igraph(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices);
+	SEXP crudeMC_graphAM(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices);
 	
-	SEXP pmc_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP verbose);
-	SEXP pmc_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP verbose);
-	SEXP pmc_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP verbose);
+	SEXP pmc_graphNEL(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP verbose);
+	SEXP pmc_igraph(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP verbose);
+	SEXP pmc_graphAM(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP verbose);
 
-	SEXP turnip_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp);
-	SEXP turnip_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp);
-	SEXP turnip_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp);
+	SEXP turnip_graphNEL(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp);
+	SEXP turnip_igraph(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp);
+	SEXP turnip_graphAM(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp);
 
-	SEXP generalisedSplittingFixedEffort_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp);
-	SEXP generalisedSplittingFixedEffort_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp);
-	SEXP generalisedSplittingFixedEffort_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp);
-	SEXP generalisedSplittingFixedFactors_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
-	SEXP generalisedSplittingFixedFactors_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
-	SEXP generalisedSplittingFixedFactors_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
+	SEXP generalisedSplittingFixedEffort_igraph(SEXP graph, SEXP distributions, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp);
+	SEXP generalisedSplittingFixedEffort_graphNEL(SEXP graph, SEXP distributions, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp);
+	SEXP generalisedSplittingFixedEffort_graphAM(SEXP graph, SEXP distributions, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp);
+	SEXP generalisedSplittingFixedFactors_igraph(SEXP graph, SEXP distributions, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
+	SEXP generalisedSplittingFixedFactors_graphNEL(SEXP graph, SEXP distributions, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
+	SEXP generalisedSplittingFixedFactors_graphAM(SEXP graph, SEXP distributions, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
 
 }
 R_CallMethodDef callMethods[] = 

@@ -1,11 +1,11 @@
 #include "turnip.h"
 #include "createContext.h"
-#include "createCapacityDistribution.h"
+#include "createCapacityDistributions.h"
 #include "Rcpp.h"
 #include "convertGraph.h"
 namespace multistateTurnip
 {
-	SEXP turnip(SEXP graph, SEXP capacity, SEXP n_sexp, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp, R_GRAPH_TYPE type)
+	SEXP turnip(SEXP graph, SEXP distributions_sexp, SEXP n_sexp, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp, R_GRAPH_TYPE type)
 	{
 	BEGIN_RCPP
 		double threshold;
@@ -72,8 +72,8 @@ namespace multistateTurnip
 		}
 
 
-		capacityDistribution distribution = createCapacityDistribution(capacity);
-		Context context = createContext(graph, distribution, interestVertices[0]-1, interestVertices[1]-1, threshold, type);
+		std::vector<capacityDistribution> distributions = createCapacityDistributions(distributions_sexp);
+		Context context = createContext(graph, distributions, interestVertices[0]-1, interestVertices[1]-1, threshold, type);
 
 		turnipArgs args(context);
 		args.randomSource.seed(seed);

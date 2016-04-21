@@ -1,11 +1,11 @@
 #include "PMC.h"
 #include "createContext.h"
-#include "createCapacityDistribution.h"
+#include "createCapacityDistributions.h"
 #include "Rcpp.h"
 #include "convertGraph.h"
 namespace multistateTurnip
 {
-	SEXP pmc(SEXP graph, SEXP capacity, SEXP n_sexp, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, R_GRAPH_TYPE type)
+	SEXP pmc(SEXP graph, SEXP distribution_sexp, SEXP n_sexp, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, R_GRAPH_TYPE type)
 	{
 	BEGIN_RCPP
 		double threshold;
@@ -75,7 +75,7 @@ namespace multistateTurnip
 			};
 		}
 
-		capacityDistribution distribution = createCapacityDistribution(capacity);
+		std::vector<capacityDistribution> distribution = createCapacityDistributions(distribution_sexp);
 		Context context = createContext(graph, distribution, interestVertices[0]-1, interestVertices[1]-1, threshold, type);
 
 		pmcArgs args(context);

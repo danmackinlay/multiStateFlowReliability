@@ -78,7 +78,7 @@ namespace multistateTurnip
 		graph.swap(other.graph);
 		source = other.source;
 		sink = other.sink;
-		distribution = std::move(other.distribution);
+		distributions = std::move(other.distributions);
 
 		edgeResidualCapacityVector.swap(other.edgeResidualCapacityVector);
 		capacityVector.swap(other.capacityVector);
@@ -95,7 +95,7 @@ namespace multistateTurnip
 		graph.swap(other.graph);
 		source = other.source;
 		sink = other.sink;
-		distribution = std::move(other.distribution);
+		distributions = std::move(other.distributions);
 
 		edgeResidualCapacityVector.swap(other.edgeResidualCapacityVector);
 		capacityVector.swap(other.capacityVector);
@@ -106,8 +106,8 @@ namespace multistateTurnip
 
 		std::swap(threshold, other.threshold);
 	}
-	Context::Context(boost::shared_ptr<const inputGraph> unorderedGraph, int source, int sink, capacityDistribution&& distribution, const mpfr_class& threshold)
-		: source(source), sink(sink), distribution(std::move(distribution))
+	Context::Context(boost::shared_ptr<const inputGraph> unorderedGraph, int source, int sink, std::vector<capacityDistribution>&& distributions, const mpfr_class& threshold)
+		: source(source), sink(sink), distributions(std::move(distributions))
 	{
 		std::size_t nVertices = boost::num_vertices(*unorderedGraph);
 		int minVertexIndex = std::min(source, sink);
@@ -117,6 +117,10 @@ namespace multistateTurnip
 			throw std::runtime_error("Input interestVertices was out of range");
 		}
 		std::size_t nEdges = boost::num_edges(*unorderedGraph);
+		if(this->distributions.size() != nEdges)
+		{
+			throw std::runtime_error("Input distributions must have an entry for every edge");
+		}
 		
 		//Double the number of edges because these are going to be used on the directed version
 		edgeResidualCapacityVector.resize(2*nEdges);
@@ -174,7 +178,7 @@ namespace multistateTurnip
 
 		return result;
 	}
-	Context Context::gridContext(int gridDimension, int source, int sink, capacityDistribution&& distribution, const mpfr_class& threshold)
+	Context Context::gridContext(int gridDimension, int source, int sink, std::vector<capacityDistribution>&& distributions, const mpfr_class& threshold)
 	{
 		boost::shared_ptr<Context::inputGraph> graph(new Context::inputGraph(gridDimension * gridDimension));
 		for(int i = 0; i < gridDimension; i++)
@@ -185,9 +189,9 @@ namespace multistateTurnip
 				if(j != gridDimension - 1) boost::add_edge(i + j*gridDimension, i + (j+1)*gridDimension, *graph);
 			}
 		}
-		return Context(graph, source, sink, std::move(distribution), threshold);
+		return Context(graph, source, sink, std::move(distributions), threshold);
 	}
-	Context Context::completeContext(int nVertices, capacityDistribution&& distribution, const mpfr_class& threshold)
+	Context Context::completeContext(int nVertices, std::vector<capacityDistribution>&& distributions, const mpfr_class& threshold)
 	{
 		boost::shared_ptr<Context::inputGraph> graph(new Context::inputGraph(nVertices));
 
@@ -199,7 +203,7 @@ namespace multistateTurnip
 			}
 		}
 
-		return Context(graph, 0, 1, std::move(distribution), threshold);
+		return Context(graph, 0, 1, std::move(distributions), threshold);
 	}
 	const Context::internalGraph& Context::getGraph() const
 	{
@@ -213,7 +217,7 @@ namespace multistateTurnip
 	{
 		return sink;
 	}
-	Context Context::fromFile(std::string path, bool& successful, int source, int sink, std::string& message, capacityDistribution&& distribution, const mpfr_class& threshold)
+	Context Context::fromFile(std::string path, bool& successful, int source, int sink, std::string& message, std::vector<capacityDistribution>&& distributions, const mpfr_class& threshold)
 	{
 		std::ifstream input(path);
 		if(!input.is_open())
@@ -241,11 +245,11 @@ namespace multistateTurnip
 			message = "Invalid vertex indices entered for input interestVertices";
 			return Context();
 		}
-		return Context(graph, source, sink, std::move(distribution), threshold);
+		return Context(graph, source, sink, std::move(distributions), threshold);
 	}
-	const capacityDistribution& Context::getDistribution() const
+	const capacityDistribution& Context::getDistribution(int edgeIndex) const
 	{
-		return distribution;
+		return distributions[edgeIndex];
 	}
 	Context::~Context()
 	{

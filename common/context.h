@@ -22,22 +22,22 @@ namespace multistateTurnip
 			> 
 		> internalDirectedGraph;
 
-		Context(boost::shared_ptr<const inputGraph> graph, int source, int sink, capacityDistribution&& distribution, const mpfr_class& threshold);
+		Context(boost::shared_ptr<const inputGraph> graph, int source, int sink, std::vector<capacityDistribution>&& distributions, const mpfr_class& threshold);
 
 		Context& operator=(Context&& other);
 		Context(Context&& other);
 		~Context();
 		
-		static Context gridContext(int gridDimension, int source, int sink, capacityDistribution&& distribution, const mpfr_class& threshold);
-		static Context fromFile(std::string path, bool& successful, int source, int sink, std::string& message, capacityDistribution&& distribution, const mpfr_class& threshold);
+		static Context gridContext(int gridDimension, int source, int sink, std::vector<capacityDistribution>&& distributions, const mpfr_class& threshold);
+		static Context fromFile(std::string path, bool& successful, int source, int sink, std::string& message, std::vector<capacityDistribution>&& distributions, const mpfr_class& threshold);
 		static Context emptyContext();
 		const internalGraph& getGraph() const;
 		const internalDirectedGraph& getDirectedGraph() const;
 		int getSource() const;
 		int getSink() const;
-		const capacityDistribution& getDistribution() const;
+		const capacityDistribution& getDistribution(int edgeIndex) const;
 		std::vector<double>& getCapacityVector() const;
-		static Context completeContext(int nVertices, capacityDistribution&& distribution, const mpfr_class& threshold);
+		static Context completeContext(int nVertices, std::vector<capacityDistribution>&& distributions, const mpfr_class& threshold);
 //		double getMaxFlow(std::vector<double>& capacities) const;
 //		double getMaxFlow(std::vector<double>& capacities, Context::internalGraph::vertex_descriptor source, Context::internalGraph::vertex_descriptor sink) const;
 	private:
@@ -48,7 +48,7 @@ namespace multistateTurnip
 		boost::shared_ptr<const internalDirectedGraph> directedGraph;
 		int source, sink;
 
-		capacityDistribution distribution;
+		std::vector<capacityDistribution> distributions;
 		mpfr_class threshold;
 		
 		//These are used in the min paths call. Stored here so they can be reused. 

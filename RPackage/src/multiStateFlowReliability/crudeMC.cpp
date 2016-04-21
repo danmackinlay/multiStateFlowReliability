@@ -1,11 +1,11 @@
 #include "crudeMC.h"
 #include "createContext.h"
-#include "createCapacityDistribution.h"
+#include "createCapacityDistributions.h"
 #include "Rcpp.h"
 #include "convertGraph.h"
 namespace multistateTurnip
 {
-	SEXP crudeMC(SEXP graph, SEXP capacity, SEXP n_sexp, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, R_GRAPH_TYPE type)
+	SEXP crudeMC(SEXP graph, SEXP distributions_sexp, SEXP n_sexp, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, R_GRAPH_TYPE type)
 	{
 	BEGIN_RCPP
 		double threshold;
@@ -49,8 +49,8 @@ namespace multistateTurnip
 		}
 		if(interestVertices.size() != 2) std::runtime_error("Input interestVertices must be a pair of numbers");
 
-		capacityDistribution distribution = createCapacityDistribution(capacity);
-		Context context = createContext(graph, distribution, interestVertices[0]-1, interestVertices[1]-1, threshold, type);
+		std::vector<capacityDistribution> distributions = createCapacityDistributions(distributions_sexp);
+		Context context = createContext(graph, distributions, interestVertices[0]-1, interestVertices[1]-1, threshold, type);
 
 		crudeMCArgs args(context);
 		args.randomSource.seed(seed);
@@ -63,17 +63,17 @@ namespace multistateTurnip
 		return Rcpp::wrap(result.str());
 	END_RCPP
 	}
-	SEXP crudeMC_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp)
+	SEXP crudeMC_igraph(SEXP graph, SEXP distributions, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp)
 	{
-		return crudeMC(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, IGRAPH);
+		return crudeMC(graph, distributions, n, threshold_sexp, seed_sexp, interestVertices_sexp, IGRAPH);
 	}
-	SEXP crudeMC_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp)
+	SEXP crudeMC_graphAM(SEXP graph, SEXP distributions, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp)
 	{
-		return crudeMC(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, GRAPHAM);
+		return crudeMC(graph, distributions, n, threshold_sexp, seed_sexp, interestVertices_sexp, GRAPHAM);
 	}
-	SEXP crudeMC_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp)
+	SEXP crudeMC_graphNEL(SEXP graph, SEXP distributions, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp)
 	{
-		return crudeMC(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, GRAPHNEL);
+		return crudeMC(graph, distributions, n, threshold_sexp, seed_sexp, interestVertices_sexp, GRAPHNEL);
 	}
 
 }

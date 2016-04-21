@@ -3,7 +3,6 @@ namespace multistateTurnip
 {
 	void resampleCapacities(resampleCapacitiesArgs& args)
 	{
-		const capacityDistribution& capacity = args.context.getDistribution();
 		const Context::internalDirectedGraph& graph = args.context.getDirectedGraph();
 
 		updateMaxFlowIncrementalArgs& updateMaxArgs = args.updateMaxFlowArgs;
@@ -29,6 +28,7 @@ namespace multistateTurnip
 			//We only want every second edge, because they come in pairs of edge / reverse edge
 			current++;
 			int edgeIndex = boost::get(boost::edge_index, graph, *current);
+			const capacityDistribution& distribution = args.context.getDistribution(edgeIndex);
 			//First work out whether there is a constraint on the flow of this edge.
 			double thresholdFlowThisEdge = args.capacity[edgeIndex] + args.oldLevel - *args.maxFlow;
 			double flowAfterIncrease;
@@ -39,12 +39,12 @@ namespace multistateTurnip
 			//In this case we need to resample the current edge conditional on being smaller than a certain value
 			if(flowAfterIncrease >= args.oldLevel)
 			{
-				newCapacity = capacity.sampleConditionalLessThan(args.randomSource, thresholdFlowThisEdge);
+				newCapacity = distribution.sampleConditionalLessThan(args.randomSource, thresholdFlowThisEdge);
 			}
 			//In this case we can resample it unconditionally. 
 			else
 			{
-				newCapacity = capacity(args.randomSource);
+				newCapacity = distribution(args.randomSource);
 			}
 			updateArgs.newCapacity = newCapacity;
 			updateArgs.edge = *current;
