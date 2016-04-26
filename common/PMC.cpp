@@ -32,7 +32,7 @@ namespace multistateTurnip
 		//Working memory for edmonds Karp
 		edmondsKarpMaxFlowScratch scratch;
 
-		std::vector<double> minimumFlows(nUndirectedEdges);
+		std::vector<double> minimumCapacities(nUndirectedEdges*2);
 
 		//Rates for the parallel edges. Different parallel edges for the same underlying original edge are consecutive
 		std::vector<std::vector<double> > originalRates(nUndirectedEdges);
@@ -48,7 +48,7 @@ namespace multistateTurnip
 			const capacityDistribution& currentEdgeDistribution = args.context.getDistribution(i);
 			const std::vector<std::pair<double, double> >& cumulativeData = currentEdgeDistribution.getCumulativeData();
 			std::size_t nLevels = currentEdgeDistribution.getData().size();
-			minimumFlows[i] = cumulativeData.front().first;
+			minimumCapacities[2*i] = minimumCapacities[2*i+1] = cumulativeData.front().first;
 			totalLevels += nLevels-1;
 			mpfr_class cumulativeRates = 0;
 			for(std::size_t j = 0; j < nLevels-1; j++)
@@ -81,8 +81,8 @@ namespace multistateTurnip
 		std::vector<mpfr_class> computeConditionalProbScratch;
 		//Work out the minimum possible flow
 		double minimumPossibleFlow = 0;
-		std::copy(minimumFlows.begin(), minimumFlows.end(), capacityVector.begin());
-		std::copy(minimumFlows.begin(), minimumFlows.end(), residualVector.begin());
+		std::copy(minimumCapacities.begin(), minimumCapacities.end(), capacityVector.begin());
+		std::copy(minimumCapacities.begin(), minimumCapacities.end(), residualVector.begin());
 		std::fill(flowVector.begin(), flowVector.end(), 0);
 		edmondsKarpMaxFlow(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, scratch, minimumPossibleFlow);
 		if(minimumPossibleFlow >= args.threshold)
@@ -100,9 +100,9 @@ namespace multistateTurnip
 			//Simulate permutation via the repair times
 			for(int k = 0; k < (int)nUndirectedEdges; k++)
 			{
-				std::vector<double>& currentEdgeRates = originalRates[i];
-				std::vector<mpfr_class>& currentEdgeRatesExact = originalRatesExact[i];
-				const capacityDistribution& currentEdgeDistribution = args.context.getDistribution(i);
+				std::vector<double>& currentEdgeRates = originalRates[k];
+				std::vector<mpfr_class>& currentEdgeRatesExact = originalRatesExact[k];
+				const capacityDistribution& currentEdgeDistribution = args.context.getDistribution(k);
 				std::size_t nLevels = currentEdgeDistribution.getData().size();
 				perEdgeRepairTimes.resize(nLevels-1);
 				//Simulate the times for all the parallel edges, for a single underlying edge
@@ -150,10 +150,10 @@ namespace multistateTurnip
 			//these are going to be the rates for the matrix exponential
 			ratesForPMC.clear();
 			//The capacities and residuals are initially at the minimum possible capacitiies. The residuals are initially zero. 
-			std::copy(minimumFlows.begin(), minimumFlows.end(), capacityVector.begin());
-			std::copy(minimumFlows.begin(), minimumFlows.end(), residualVector.begin());
+			std::copy(minimumCapacities.begin(), minimumCapacities.end(), capacityVector.begin());
+			std::copy(minimumCapacities.begin(), minimumCapacities.end(), residualVector.begin());
 			std::fill(flowVector.begin(), flowVector.end(), 0);
-			double currentFlow = 0;
+			double currentFlow = minimumPossibleFlow;
 			while(insufficientFlow && repairTimeIterator != repairTimes.end())
 			{
 				//get out the parallel edge index

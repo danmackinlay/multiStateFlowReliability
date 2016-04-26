@@ -25,7 +25,6 @@ namespace multistateTurnip
 		std::size_t nEdges = boost::num_edges(graph);
 		std::vector<double> residual(nEdges * productFactors, 0), flow(nEdges * productFactors, 0), capacity(nEdges * productFactors, 0);
 		std::vector<double> newResidual(nEdges * productFactors, 0), newFlow(nEdges * productFactors, 0), newCapacity(nEdges * productFactors);
-		int samplesLessThanFlow = 0;
 		std::vector<double> maxFlows(productFactors, 0), newMaxFlows(productFactors, 0);
 
 		std::vector<int> levelCounts;

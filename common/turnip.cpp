@@ -35,7 +35,7 @@ namespace multistateTurnip
 		//Working data for the edmonds karp call(s)
 		edmondsKarpMaxFlowScratch edmondsKarpScratch;
 
-		std::vector<double> minimumFlows(nUndirectedEdges);
+		std::vector<double> minimumCapacities(2*nUndirectedEdges);
 
 		//All-points max-flow matrix
 		std::vector<double> flowMatrix(nVertices*nVertices);
@@ -51,8 +51,8 @@ namespace multistateTurnip
 			}
 		}
 
-		std::vector<std::vector<double> > originalRates;
-		std::vector<std::vector<mpfr_class> > originalRatesExact;
+		std::vector<std::vector<double> > originalRates(nUndirectedEdges);
+		std::vector<std::vector<mpfr_class> > originalRatesExact(nUndirectedEdges);
 		//The edges which have already been seen. This is used to exclude edges which become redundant. 
 		std::vector<std::vector<bool> > alreadySeen(nUndirectedEdges);
 		//The rates for all the different edges, after some edges have been discarded and their rates added to some other edge
@@ -68,7 +68,7 @@ namespace multistateTurnip
 			const capacityDistribution& currentEdgeDistribution = args.context.getDistribution(i);
 			const std::vector<std::pair<double, double> >& cumulativeData = currentEdgeDistribution.getCumulativeData();
 			std::size_t nLevels = currentEdgeDistribution.getData().size();
-			minimumFlows[i] = cumulativeData.front().first;
+			minimumCapacities[2*i] = minimumCapacities[2*i + 1] = cumulativeData.front().first;
 			totalLevels += nLevels - 1;
 			mpfr_class cumulativeRates = 0;
 			alreadySeen[i].resize(nLevels);
@@ -105,8 +105,8 @@ namespace multistateTurnip
 
 		//Work out the minimum possible flow
 		double minimumPossibleFlow = 0;
-		std::copy(minimumFlows.begin(), minimumFlows.end(), capacityVector.begin());
-		std::copy(minimumFlows.begin(), minimumFlows.end(), residualVector.begin());
+		std::copy(minimumCapacities.begin(), minimumCapacities.end(), capacityVector.begin());
+		std::copy(minimumCapacities.begin(), minimumCapacities.end(), residualVector.begin());
 		std::fill(flowVector.begin(), flowVector.end(), 0);
 		edmondsKarpMaxFlow(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, edmondsKarpScratch, minimumPossibleFlow);
 		if(minimumPossibleFlow >= args.threshold)
@@ -126,9 +126,9 @@ namespace multistateTurnip
 			{
 				std::fill(ratesForEdges[k].begin(), ratesForEdges[k].end(), 0);
 
-				std::vector<double>& currentEdgeRates = originalRates[i];
-				std::vector<mpfr_class>& currentEdgeRatesExact = originalRatesExact[i];
-				const capacityDistribution& currentEdgeDistribution = args.context.getDistribution(i);
+				std::vector<double>& currentEdgeRates = originalRates[k];
+				std::vector<mpfr_class>& currentEdgeRatesExact = originalRatesExact[k];
+				const capacityDistribution& currentEdgeDistribution = args.context.getDistribution(k);
 				std::size_t nLevels = currentEdgeDistribution.getData().size();
 				perEdgeRepairTimes.resize(nLevels-1);
 				for(int j = 0; j < (int)nLevels - 1; j++)
@@ -150,7 +150,7 @@ namespace multistateTurnip
 				{
 					if(perEdgeRepairTimes[j] > minRepairTime->time)
 					{
-						minRepairTime->rate += currentEdgeRatesExact[k*(nLevels - 1) + j];
+						minRepairTime->rate += currentEdgeRatesExact[j];
 					}
 					else
 					{
@@ -178,8 +178,8 @@ namespace multistateTurnip
 			//these are going to be the rates for the matrix exponential
 			ratesForPMC.clear();
 			//The capacities and residuals are initially at the minimum possible capacitiies. The residuals are initially zero. 
-			std::copy(minimumFlows.begin(), minimumFlows.end(), capacityVector.begin());
-			std::copy(minimumFlows.begin(), minimumFlows.end(), residualVector.begin());
+			std::copy(minimumCapacities.begin(), minimumCapacities.end(), capacityVector.begin());
+			std::copy(minimumCapacities.begin(), minimumCapacities.end(), residualVector.begin());
 			std::fill(flowVector.begin(), flowVector.end(), 0);
 			double currentFlow = 0;
 			//Counter used to make sure we only call the all-points max flow once for every fixed number of steps
@@ -257,7 +257,7 @@ namespace multistateTurnip
 								if(!alreadySeen[edge][counter])
 								{
 									currentRate -= ratesForEdges[edge][counter];
-									alreadySeen[edge][level] = true;
+									alreadySeen[edge][counter] = true;
 								}
 							}
 						}
