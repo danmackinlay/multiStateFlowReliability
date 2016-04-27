@@ -28,7 +28,7 @@ namespace multistateTurnip
 			//We only want every second edge, because they come in pairs of edge / reverse edge
 			current++;
 			int edgeIndex = boost::get(boost::edge_index, graph, *current);
-			const capacityDistribution& distribution = args.context.getDistribution(edgeIndex);
+			const capacityDistribution& distribution = args.context.getDistribution(edgeIndex/2);
 			//First work out whether there is a constraint on the flow of this edge.
 			double thresholdFlowThisEdge = args.capacity[edgeIndex] + args.oldLevel - *args.maxFlow;
 			double flowAfterIncrease;
