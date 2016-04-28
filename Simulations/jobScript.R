@@ -8,6 +8,7 @@ outputFile <- file.path("results", scenarios[SCENARIO_INDEX, "file"])
 tmpFile <- paste0(outputFile, ".tmp")
 library(multiStateFlowReliability)
 library(stringr)
+library(igraph)
 
 epsilon <- scenarios[SCENARIO_INDEX, "epsilon"]
 method <- scenarios[SCENARIO_INDEX, "method"]
@@ -49,12 +50,37 @@ if(graph == "dodecahedron")
 } else if(graph == "dodecahedron5EqualCapacity")
 {
 	graph <- igraph::read.graph("./dodecahedron.graphml", format = "graphml")
-	capacityMatrix <- getCapacityMatrix(rho = 0.7, epsilon = 0.01, bi = 4)
+	capacityMatrix <- getCapacityMatrix(rho = 0.7, epsilon = epsilon, bi = 4)
 	capacityList <- replicate(30, capacityMatrix, simplify=FALSE)
 
 	maxCapacity <- max(capacityMatrix[,1])
 	maxPossibleFlow <- 3*maxCapacity
 	replications <- 1
+} else if(graph == "dodecahedron15UnequalCapacity")
+{
+	graph <- igraph::read.graph("./dodecahedron.graphml", format = "graphml")
+	capacityMatrix1 <- getCapacityMatrix(rho = 0.7, epsilon = epsilon, bi = 10)
+	capacityMatrix2 <- getCapacityMatrix(rho = 0.7, epsilon = epsilon, bi = 15)
+	capacityList <- replicate(30, capacityMatrix1, simplify=FALSE)
+
+	maxPossibleFlow <- 30
+	replications <- 1
+
+	#Work out which edges should have the second capacity distribution
+	edgeMatrix <- igraph::get.edges(graph, igraph::E(graph))
+	secondCapacityEdges <- which(edgeMatrix[,1] %in% c(1, 20) | edgeMatrix[,2] %in% c(1, 20))
+	capacityList[secondCapacityEdges] <- replicate(length(secondCapacityEdges), capacityMatrix2, simplify=FALSE)
+else if(graph == "grid10x10_1")
+{
+	graph <- igraph::make_lattice(dimvector = c(10,10))
+	capacityMatrix1 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 8)
+	capacityMatrix2 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 12)
+	capacityList <- replicate(180, capacityMatrix1, simplify=FALSE)
+
+	edgeMatrix <- igraph::get.edges(graph, igraph::E(graph))
+	secondCapacityEdges <- which(edgeMatrix[,1] %in% c(1, 100) | edgeMatrix[,2] %in% c(1, 100))
+	capacityList[secondCapacityEdges] <- replicate(length(secondCapacityEdges), capacityMatrix2, simplify=FALSE)
+}
 } else
 {
 	stop("Unknown graph")
