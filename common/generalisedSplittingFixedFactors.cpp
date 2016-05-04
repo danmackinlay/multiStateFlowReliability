@@ -35,6 +35,8 @@ namespace multistateTurnip
 		resampleArgs.nDirectedEdges = (int)nEdges;
 		resampleArgs.source = source;
 		resampleArgs.sink = sink;
+		//The estimator is an average of iid random variables. This lets us estimate the variance in a smart way. But for this we need the sum of the number of accepted particles (for each initial particle), and the sum of the squares of such numbers
+		mpfr_class sum = 0, sumSquared = 0;
 		//Generate initial sample
 		for(int sampleCounter = 0; sampleCounter < args.n; sampleCounter++)
 		{
@@ -94,11 +96,19 @@ namespace multistateTurnip
 					break;
 				}
 			}
+			int acceptedSamples = 0;
 			//Count the samples which hit the final level
 			for(int sampleCounter = 0; sampleCounter < currentSamples; sampleCounter++)
 			{
-				if(maxFlows[sampleCounter] < args.levels.back()) levelCounts.back()++;
+				if(maxFlows[sampleCounter] < args.levels.back()) 
+				{
+					levelCounts.back()++;
+					acceptedSamples++;
+				}
 			}
+			double ratio = (double)acceptedSamples / (double)productFactors;
+			sum += ratio;
+			sumSquared += ratio*ratio;
 		}
 		args.levelProbabilities.resize(args.levels.size());
 		args.estimate = args.levelProbabilities[0] = (double)levelCounts[0] / (double)args.n;
@@ -107,5 +117,6 @@ namespace multistateTurnip
 			args.levelProbabilities[levelCounter+1] = (double)levelCounts[levelCounter+1] / (double)(levelCounts[levelCounter]*args.splittingFactors[levelCounter]);
 			args.estimate *= args.levelProbabilities[levelCounter+1];
 		}
+		args.estimatedVariance = (double)(sumSquared/args.n - (sum / args.n) * (sum / args.n))/args.n;
 	}
 }

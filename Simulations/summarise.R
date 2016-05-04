@@ -1,4 +1,5 @@
 source("./generateScenarios.R")
+library(Rmpfr)
 allResults <- list()
 for(i in 1:nrow(scenarios))
 {
@@ -88,4 +89,7 @@ varianceFunc <- function(x)
 variances <- do.call(c, lapply(allResults, varianceFunc))
 workNormalizedVariance <- as.numeric(variances * averageSecondsPerRun)
 
-save(allResults, secondsSingleSample, varianceSingleSample, workNormalizedSingleSampleVariance, averageEstimates, averageSecondsPerRun, secondsPerRun, variances, workNormalizedVariance, file = "summarised.RData")
+relativeErrors <- sqrt(variances) / averageEstimates
+wnrv <- as.numeric(variances * averageSecondsPerRun / (averageEstimates^2))
+
+save(allResults, secondsSingleSample, varianceSingleSample, workNormalizedSingleSampleVariance, averageEstimates, averageSecondsPerRun, secondsPerRun, variances, workNormalizedVariance, wnrv, relativeErrors, file = "summarised.RData")

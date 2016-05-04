@@ -17,6 +17,7 @@ namespace multistateTurnip
 		std::vector<int> splittingFactors;
 		std::function<void(unsigned long, unsigned long)> progressFunction;
 		std::function<void(std::string&)> outputFunc;
+		double estimatedVariance;
 	};
 	void generalisedSplittingFixedFactors(generalisedSplittingFixedFactorsArgs& args);
 }
