@@ -4,7 +4,7 @@
 #include <boost/range/algorithm/random_shuffle.hpp>
 #include <algorithm>
 #include <boost/random/exponential_distribution.hpp>
-#include "edmondsKarp.h"
+#include "edmondsKarp.hpp"
 namespace multistateTurnip
 {
 	namespace pmcPrivate
@@ -30,7 +30,7 @@ namespace multistateTurnip
 		int sink = args.context.getSink();
 
 		//Working memory for edmonds Karp
-		edmondsKarpMaxFlowScratch scratch;
+		edmondsKarpMaxFlowScratch<Context::internalDirectedGraph, double> scratch;
 
 		std::vector<double> minimumCapacities(nUndirectedEdges*2);
 
@@ -84,7 +84,7 @@ namespace multistateTurnip
 		std::copy(minimumCapacities.begin(), minimumCapacities.end(), capacityVector.begin());
 		std::copy(minimumCapacities.begin(), minimumCapacities.end(), residualVector.begin());
 		std::fill(flowVector.begin(), flowVector.end(), 0);
-		edmondsKarpMaxFlow(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, scratch, minimumPossibleFlow);
+		edmondsKarpMaxFlow<Context::internalDirectedGraph, double>(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, scratch, minimumPossibleFlow);
 		if(minimumPossibleFlow >= args.threshold)
 		{
 			args.firstMomentSingleSample = 1;
@@ -169,7 +169,7 @@ namespace multistateTurnip
 				residualVector[2 * edge] += increase;
 				residualVector[2 * edge + 1] += increase;
 				//determine whether or not we've hit the critical threshold
-				edmondsKarpMaxFlow(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, scratch, currentFlow);
+				edmondsKarpMaxFlow<Context::internalDirectedGraph, double>(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, scratch, currentFlow);
 				insufficientFlow = args.threshold > currentFlow;
 				//Add the current rate
 				ratesForPMC.push_back(currentRate);

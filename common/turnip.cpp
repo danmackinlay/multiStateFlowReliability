@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <boost/random/exponential_distribution.hpp>
 #include "allPointsMaxFlow.hpp"
-#include "edmondsKarp.h"
+#include "edmondsKarp.hpp"
 namespace multistateTurnip
 {
 	namespace turnipPrivate
@@ -33,7 +33,7 @@ namespace multistateTurnip
 		//These are only needed for the allPointsMaxFlow call. 
 		allPointsMaxFlow::allPointsMaxFlowScratch<Context::internalDirectedGraph> scratch;
 		//Working data for the edmonds karp call(s)
-		edmondsKarpMaxFlowScratch edmondsKarpScratch;
+		edmondsKarpMaxFlowScratch<Context::internalDirectedGraph, double> edmondsKarpScratch;
 
 		std::vector<double> minimumCapacities(2*nUndirectedEdges);
 
@@ -108,7 +108,7 @@ namespace multistateTurnip
 		std::copy(minimumCapacities.begin(), minimumCapacities.end(), capacityVector.begin());
 		std::copy(minimumCapacities.begin(), minimumCapacities.end(), residualVector.begin());
 		std::fill(flowVector.begin(), flowVector.end(), 0);
-		edmondsKarpMaxFlow(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, edmondsKarpScratch, minimumPossibleFlow);
+		edmondsKarpMaxFlow<Context::internalDirectedGraph, double>(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, edmondsKarpScratch, minimumPossibleFlow);
 		if(minimumPossibleFlow >= args.threshold)
 		{
 			args.firstMomentSingleSample = 1;
@@ -203,7 +203,7 @@ namespace multistateTurnip
 					residualVector[2 * edge + 1] += increase;
 
 					//determine whether or not we've hit the critical threshold
-					edmondsKarpMaxFlow(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, edmondsKarpScratch, currentFlow);
+					edmondsKarpMaxFlow<Context::internalDirectedGraph, double>(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, edmondsKarpScratch, currentFlow);
 					insufficientFlow = args.threshold > currentFlow;
 					//Add the current rate
 					ratesForPMC.push_back(currentRate);
@@ -246,7 +246,7 @@ namespace multistateTurnip
 						std::fill(flowVectorIncreasedEdge.begin(), flowVectorIncreasedEdge.end(), 0);
 						std::copy(capacityVector.begin(), capacityVector.end(), residualVectorIncreasedEdge.begin());
 						double flowIncreasedEdge = 0;
-						edmondsKarpMaxFlow(&capacityVector.front(), &flowVectorIncreasedEdge.front(), &residualVectorIncreasedEdge.front(), directedGraph, firstVertex, secondVertex, args.threshold, edmondsKarpScratch, flowIncreasedEdge);
+						edmondsKarpMaxFlow<Context::internalDirectedGraph, double>(&capacityVector.front(), &flowVectorIncreasedEdge.front(), &residualVectorIncreasedEdge.front(), directedGraph, firstVertex, secondVertex, args.threshold, edmondsKarpScratch, flowIncreasedEdge);
 						if(flowIncreasedEdge >= args.threshold)
 						{
 							const capacityDistribution& edgeToIgnoreDistribution = args.context.getDistribution(edge);

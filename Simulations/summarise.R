@@ -33,13 +33,13 @@ averageEstimatesFunc <- function(x)
 	{
 		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@data)))))
 	}
-	else if(class(x[[1]]) == "generalisedSplittingResult")
+	else if(class(x[[1]]) %in% c("generalisedSplittingFixedFactorsResult", "generalisedSplittingFixedEffortResult"))
 	{
 		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@estimate)))))
 	}
 	else 
 	{
-		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@estimateFirstMoment)))))
+		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@firstMomentSingleSample)))))
 	}
 }
 averageEstimates <- do.call(c, lapply(allResults, averageEstimatesFunc))
@@ -54,13 +54,13 @@ varianceSingleSampleFunc <- function(x)
 	{
 		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@data*(1 - y@data))))))
 	}
-	else if(class(x[[1]]) == "generalisedSplittingResult")
+	else if(class(x[[1]]) %in% c("generalisedSplittingFixedFactorsResult", "generalisedSplittingFixedEffortResult"))
 	{
 		return(NA)
 	}
 	else 
 	{
-		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@varianceEstimate)))))
+		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@varianceSingleSample)))))
 	}
 }
 varianceSingleSample <- do.call(c, lapply(allResults, varianceSingleSampleFunc))
@@ -76,13 +76,13 @@ varianceFunc <- function(x)
 	{
 		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@data*(1 - y@data)/y@n)))))
 	}
-	else if(class(x[[1]]) == "generalisedSplittingResult")
+	else if(class(x[[1]]) %in% c("generalisedSplittingFixedFactorsResult", "generalisedSplittingFixedEffortResult"))
 	{
 		return(as.numeric(var(do.call(c, lapply(x, function(y) y@estimate)))))
 	}
 	else 
 	{
-		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@varianceEstimate/y@n)))))
+		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@varianceSingleSample/y@n)))))
 	}
 }
 variances <- do.call(c, lapply(allResults, varianceFunc))

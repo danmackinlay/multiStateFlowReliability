@@ -1,15 +1,16 @@
-#include "updateFlowIncremental.h"
-#include "updateMaxFlowIncremental.h"
+#include "context.h"
+#include "updateFlowIncremental.hpp"
+#include "updateMaxFlowIncremental.hpp"
 #include <limits>
 #include <boost/random/bernoulli_distribution.hpp>
 #include <boost/random/exponential_distribution.hpp>
 #include <boost/graph/connected_components.hpp>
-#include "edmondsKarp.h"
+#include "edmondsKarp.hpp"
 namespace multistateTurnip
 {
 	int main(int argc, char **argv)
 	{
-		edmondsKarpMaxFlowScratch scratch;
+		edmondsKarpMaxFlowScratch<Context::internalDirectedGraph, double> scratch;
 
 		//construct random graph
 		boost::mt19937 randomSource;
@@ -50,9 +51,9 @@ namespace multistateTurnip
 		boost::random::exponential_distribution<double> expDist(3);
 
 		//incremental arguments
-		edmondsKarpMaxFlowScratch incrementalScratch;
+		edmondsKarpMaxFlowScratch<Context::internalDirectedGraph, double> incrementalScratch;
 
-		updateFlowIncrementalArgs incrementalFlowArgs(randomGraph, incrementalScratch);
+		updateFlowIncrementalArgs<Context::internalDirectedGraph, double> incrementalFlowArgs(randomGraph, incrementalScratch);
 		incrementalFlowArgs.capacity = &(incCapacity[0]);
 		incrementalFlowArgs.flow = &(incFlow[0]);
 		incrementalFlowArgs.residual = &(incResidual[0]);
@@ -60,7 +61,7 @@ namespace multistateTurnip
 		incrementalFlowArgs.sink = nVertices - 1;
 		incrementalFlowArgs.nDirectedEdges = nDirectedEdges;
 
-		updateMaxFlowIncrementalArgs incrementalMaxFlowArgs(randomGraph, incrementalScratch);
+		updateMaxFlowIncrementalArgs<Context::internalDirectedGraph, double> incrementalMaxFlowArgs(randomGraph, incrementalScratch);
 		incrementalMaxFlowArgs.capacity = &(incCapacity[0]);
 		incrementalMaxFlowArgs.flow = &(incFlow[0]);
 		incrementalMaxFlowArgs.residual = &(incResidual[0]);
@@ -85,14 +86,14 @@ namespace multistateTurnip
 				std::fill(flow.begin(), flow.end(), 0);
 				std::copy(capacity.begin(), capacity.end(), residual.begin());
 				double edmondsKarpMaxFlowResult = 0;
-				edmondsKarpMaxFlow(&(capacity[0]), &(flow[0]), &(residual[0]), randomGraph, 0, nVertices - 1, std::numeric_limits<double>::infinity(), scratch, edmondsKarpMaxFlowResult);
+				edmondsKarpMaxFlow<Context::internalDirectedGraph, double>(&(capacity[0]), &(flow[0]), &(residual[0]), randomGraph, 0, nVertices - 1, std::numeric_limits<double>::infinity(), scratch, edmondsKarpMaxFlowResult);
 
 				//Test the code that only updates the max flow
 				incrementalMaxFlowArgs.edge = *current;
 				incrementalMaxFlowArgs.newCapacity = newCapacity;
 				double previousMaxFlow = incrementalMaxFlow;
 				double onlyMaxFlow;
-				updateMaxFlowIncremental(incrementalMaxFlowArgs, previousMaxFlow, onlyMaxFlow);
+				updateMaxFlowIncremental<Context::internalDirectedGraph, double>(incrementalMaxFlowArgs, previousMaxFlow, onlyMaxFlow);
 				if(fabs(onlyMaxFlow - edmondsKarpMaxFlowResult) > 1e-8)
 				{
 					throw std::runtime_error("Max flow mismatch");
@@ -109,7 +110,7 @@ namespace multistateTurnip
 
 				//Check that the incremental code has worked. 
 				double tmp = 0;
-				edmondsKarpMaxFlow(&(incCapacity[0]), &(incFlow[0]), &(incResidual[0]), randomGraph, 0, nVertices - 1, std::numeric_limits<double>::infinity(), scratch, tmp);
+				edmondsKarpMaxFlow<Context::internalDirectedGraph, double>(&(incCapacity[0]), &(incFlow[0]), &(incResidual[0]), randomGraph, 0, nVertices - 1, std::numeric_limits<double>::infinity(), scratch, tmp);
 				if(fabs(tmp) > 1e-8)
 				{
 					throw std::runtime_error("Max flow mismatch");

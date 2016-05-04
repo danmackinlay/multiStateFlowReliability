@@ -1,7 +1,7 @@
 #include "generalisedSplittingFixedFactors.h"
-#include "edmondsKarp.h"
-#include "updateMaxFlowIncremental.h"
-#include "updateFlowIncremental.h"
+#include "edmondsKarp.hpp"
+#include "updateMaxFlowIncremental.hpp"
+#include "updateFlowIncremental.hpp"
 #include <boost/range/algorithm/random_shuffle.hpp>
 #include <iostream>
 #include "resampleCapacities.h"
@@ -19,7 +19,7 @@ namespace multistateTurnip
 		int productFactors = 1;
 		for(std::vector<int>::iterator i = args.splittingFactors.begin(); i != args.splittingFactors.end(); i++) productFactors *= *i;
 
-		edmondsKarpMaxFlowScratch scratch;
+		edmondsKarpMaxFlowScratch<Context::internalDirectedGraph, double> scratch;
 		const Context::internalDirectedGraph& graph = args.context.getDirectedGraph();
 		int source = args.context.getSource(), sink = args.context.getSink();
 		std::size_t nEdges = boost::num_edges(graph);
@@ -49,7 +49,7 @@ namespace multistateTurnip
 			}
 			maxFlows[0] = 0;
 			std::fill(currentSampleFlow, currentSampleFlow + nEdges, 0);
-			edmondsKarpMaxFlow(currentSampleCapacity, currentSampleFlow, currentSampleResidual, graph, source, sink, oldLevel, scratch, maxFlows[0]);
+			edmondsKarpMaxFlow<Context::internalDirectedGraph, double>(currentSampleCapacity, currentSampleFlow, currentSampleResidual, graph, source, sink, oldLevel, scratch, maxFlows[0]);
 			int currentSamples = 1;
 			for(int levelCounter = 0; levelCounter < (int)args.levels.size()-1; levelCounter++)
 			{

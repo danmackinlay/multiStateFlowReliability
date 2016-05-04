@@ -1,7 +1,5 @@
 #include "generalisedSplittingFixedEffort.h"
-#include "edmondsKarp.h"
-#include "updateMaxFlowIncremental.h"
-#include "updateFlowIncremental.h"
+#include "edmondsKarp.hpp"
 #include <boost/range/algorithm/random_shuffle.hpp>
 #include <boost/random/random_number_generator.hpp>
 #include <iostream>
@@ -13,7 +11,7 @@ namespace multistateTurnip
 		args.estimate = 1;
 		args.levelProbabilities.clear();
 
-		edmondsKarpMaxFlowScratch scratch;
+		edmondsKarpMaxFlowScratch<Context::internalDirectedGraph, double> scratch;
 		const Context::internalDirectedGraph& graph = args.context.getDirectedGraph();
 		int source = args.context.getSource(), sink = args.context.getSink();
 		std::size_t nEdges = boost::num_edges(graph);
@@ -43,7 +41,7 @@ namespace multistateTurnip
 				const capacityDistribution& distribution = args.context.getDistribution(edgeCounter);
 				currentSampleResidual[2*edgeCounter] = currentSampleResidual[2*edgeCounter+1] = currentSampleCapacity[2*edgeCounter] = currentSampleCapacity[2*edgeCounter+1] = distribution(args.randomSource);
 			}
-			edmondsKarpMaxFlow(currentSampleCapacity, currentSampleFlow, currentSampleResidual, graph, source, sink, oldLevel, scratch, maxFlows[sampleCounter]);
+			edmondsKarpMaxFlow<Context::internalDirectedGraph, double>(currentSampleCapacity, currentSampleFlow, currentSampleResidual, graph, source, sink, oldLevel, scratch, maxFlows[sampleCounter]);
 			if(maxFlows[sampleCounter] < oldLevel)
 			{
 				samplesLessThanFlow++;

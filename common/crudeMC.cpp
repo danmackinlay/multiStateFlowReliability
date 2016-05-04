@@ -1,5 +1,5 @@
 #include "crudeMC.h"
-#include "edmondsKarp.h"
+#include "edmondsKarp.hpp"
 namespace multistateTurnip
 {
 	void crudeMC(crudeMCArgs& args)
@@ -16,7 +16,7 @@ namespace multistateTurnip
 		
 		std::vector<double> flowVector(nDirectedEdges), residualVector(nDirectedEdges);
 		args.count = 0;
-		edmondsKarpMaxFlowScratch scratch;
+		edmondsKarpMaxFlowScratch<Context::internalDirectedGraph, double>scratch;
 		for(int i = 0; i < args.n; i++)
 		{
 			for(std::size_t edgeCounter = 0; edgeCounter < nEdges; edgeCounter++)
@@ -27,7 +27,7 @@ namespace multistateTurnip
 			double flow = 0;
 			std::fill(flowVector.begin(), flowVector.end(), 0);
 			std::copy(capacityVector.begin(), capacityVector.end(), residualVector.begin());
-			edmondsKarpMaxFlow(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, scratch, flow);
+			edmondsKarpMaxFlow<Context::internalDirectedGraph, double>(&capacityVector.front(), &flowVector.front(), &residualVector.front(), directedGraph, source, sink, args.threshold, scratch, flow);
 			if(flow < args.threshold) args.count++;
 		}
 	}

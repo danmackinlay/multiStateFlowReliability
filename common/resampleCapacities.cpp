@@ -5,7 +5,7 @@ namespace multistateTurnip
 	{
 		const Context::internalDirectedGraph& graph = args.context.getDirectedGraph();
 
-		updateMaxFlowIncrementalArgs& updateMaxArgs = args.updateMaxFlowArgs;
+		updateMaxFlowIncrementalArgs<Context::internalDirectedGraph, double>& updateMaxArgs = args.updateMaxFlowArgs;
 		updateMaxArgs.nDirectedEdges = args.nDirectedEdges;
 		updateMaxArgs.capacity = args.capacity;
 		updateMaxArgs.flow = args.flow;
@@ -13,7 +13,7 @@ namespace multistateTurnip
 		updateMaxArgs.source = args.source;
 		updateMaxArgs.sink = args.sink;
 
-		updateFlowIncrementalArgs& updateArgs = args.updateFlowArgs;
+		updateFlowIncrementalArgs<Context::internalDirectedGraph, double>& updateArgs = args.updateFlowArgs;
 		updateArgs.source = args.source;
 		updateArgs.sink = args.sink;
 		updateArgs.flow = args.flow;
@@ -34,7 +34,7 @@ namespace multistateTurnip
 			double flowAfterIncrease;
 			updateMaxArgs.newCapacity = thresholdFlowThisEdge;
 			updateMaxArgs.edge = *current;
-			updateMaxFlowIncremental(updateMaxArgs, *args.maxFlow, flowAfterIncrease);
+			updateMaxFlowIncremental<Context::internalDirectedGraph, double>(updateMaxArgs, *args.maxFlow, flowAfterIncrease);
 			double newCapacity;
 			//In this case we need to resample the current edge conditional on being smaller than a certain value
 			if(flowAfterIncrease >= args.oldLevel)
@@ -49,7 +49,7 @@ namespace multistateTurnip
 			updateArgs.newCapacity = newCapacity;
 			updateArgs.edge = *current;
 			double newMaxFlow;
-			updateFlowIncremental(updateArgs, *args.maxFlow, newMaxFlow);
+			updateFlowIncremental<Context::internalDirectedGraph>(updateArgs, *args.maxFlow, newMaxFlow);
 			*args.maxFlow = newMaxFlow;
 		}
 	}

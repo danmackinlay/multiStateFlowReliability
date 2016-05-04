@@ -2,13 +2,13 @@
 #define RESAMPLE_CAPACITIES_HEADER_GUARD
 #include <vector>
 #include "context.h"
-#include "updateMaxFlowIncremental.h"
-#include "updateFlowIncremental.h"
+#include "updateMaxFlowIncremental.hpp"
+#include "updateFlowIncremental.hpp"
 namespace multistateTurnip
 {
 	struct resampleCapacitiesArgs
 	{
-		resampleCapacitiesArgs(const Context& context, edmondsKarpMaxFlowScratch& scratch, boost::mt19937& randomSource)
+		resampleCapacitiesArgs(const Context& context, edmondsKarpMaxFlowScratch<Context::internalDirectedGraph, double>& scratch, boost::mt19937& randomSource)
 			: context(context), scratch(scratch), updateMaxFlowArgs(context.getDirectedGraph(), scratch), updateFlowArgs(context.getDirectedGraph(), scratch), randomSource(randomSource)
 		{}
 		const Context& context;
@@ -17,12 +17,12 @@ namespace multistateTurnip
 		std::vector<double> working1, working2;
 		int nEdges, nDirectedEdges;
 		int source, sink;
-		edmondsKarpMaxFlowScratch& scratch;
+		edmondsKarpMaxFlowScratch<Context::internalDirectedGraph, double>& scratch;
 		double* maxFlow;
 		//In this case we just want to update the max flow
-		updateMaxFlowIncrementalArgs updateMaxFlowArgs;
+		updateMaxFlowIncrementalArgs<Context::internalDirectedGraph, double> updateMaxFlowArgs;
 		//Here we want to update the max flow AND the flow and residual
-		updateFlowIncrementalArgs updateFlowArgs;
+		updateFlowIncrementalArgs<Context::internalDirectedGraph, double> updateFlowArgs;
 		boost::mt19937& randomSource;
 	};
 	void resampleCapacities(resampleCapacitiesArgs& args);

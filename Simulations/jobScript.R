@@ -70,7 +70,7 @@ if(graph == "dodecahedron")
 	edgeMatrix <- igraph::get.edges(graph, igraph::E(graph))
 	secondCapacityEdges <- which(edgeMatrix[,1] %in% c(1, 20) | edgeMatrix[,2] %in% c(1, 20))
 	capacityList[secondCapacityEdges] <- replicate(length(secondCapacityEdges), capacityMatrix2, simplify=FALSE)
-else if(graph == "grid10x10_1")
+} else if(graph == "grid10x10_1")
 {
 	graph <- igraph::make_lattice(dimvector = c(10,10))
 	capacityMatrix1 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 8)
@@ -80,7 +80,8 @@ else if(graph == "grid10x10_1")
 	edgeMatrix <- igraph::get.edges(graph, igraph::E(graph))
 	secondCapacityEdges <- which(edgeMatrix[,1] %in% c(1, 100) | edgeMatrix[,2] %in% c(1, 100))
 	capacityList[secondCapacityEdges] <- replicate(length(secondCapacityEdges), capacityMatrix2, simplify=FALSE)
-}
+	replications <- 1
+	maxPossibleFlow <- 24
 } else
 {
 	stop("Unknown graph")
