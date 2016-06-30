@@ -6,6 +6,16 @@
 #include "includeMPFR.h"
 namespace multistateTurnip
 {
+	struct edgeRepairData
+	{
+		int edge, level;
+		double time;
+		mpfr_class rate;
+	};
+	bool timeSorter(const edgeRepairData& first, const edgeRepairData& second)
+	{
+		return first.time < second.time;
+	}
 	struct turnipArgs
 	{
 	public:

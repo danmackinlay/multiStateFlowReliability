@@ -4,9 +4,9 @@
 #$ -q low.q
 #$ -pe threaded 1
 #$ -w e
-#$ -l h_vmem=5G
-#$ -l h_rt=12:00:00
-#$ -l s_rt=11:59:50
+#$ -l h_vmem=20G
+#$ -l h_rt=36:00:00
+#$ -l s_rt=35:59:50
 #$ -v SCENARIO_INDEX
 #$ -v UPPER_LIMIT
 #$ -v LOWER_LIMIT

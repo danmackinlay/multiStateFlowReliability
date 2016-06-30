@@ -8,19 +8,6 @@
 #include "edmondsKarp.hpp"
 namespace multistateTurnip
 {
-	namespace turnipPrivate
-	{
-		struct edgeRepairData
-		{
-			int edge, level;
-			double time;
-			mpfr_class rate;
-		};
-		bool timeSorter(const edgeRepairData& first, const edgeRepairData& second)
-		{
-			return first.time < second.time;
-		}
-	}
 	void turnip(turnipArgs& args)
 	{
 		const Context& context = args.context;
@@ -93,7 +80,7 @@ namespace multistateTurnip
 		//This stores the rates that go into the matrix exponential computation
 		std::vector<mpfr_class> ratesForPMC;
 		//Repair time vector
-		std::vector<turnipPrivate::edgeRepairData> repairTimes;
+		std::vector<edgeRepairData> repairTimes;
 		repairTimes.reserve(totalLevels);
 		//Only warn about stability once
 		bool warnedStability = false;
@@ -137,7 +124,7 @@ namespace multistateTurnip
 					perEdgeRepairTimes[j] = repairDist(args.randomSource);
 				}
 				//The increase to highest capacity definitely occurs at some point
-				turnipPrivate::edgeRepairData highest;
+				edgeRepairData highest;
 				highest.time = perEdgeRepairTimes[0];
 				highest.rate = currentEdgeRatesExact[0];
 				highest.level = 0;
@@ -145,7 +132,7 @@ namespace multistateTurnip
 				repairTimes.push_back(highest);
 
 				//We can store pointers because there is no reallocation of this vector, due to reserve call
-				turnipPrivate::edgeRepairData* minRepairTime = &*repairTimes.rbegin();
+				edgeRepairData* minRepairTime = &*repairTimes.rbegin();
 				for(int j = 1; j < (int)nLevels - 1; j++)
 				{
 					if(perEdgeRepairTimes[j] > minRepairTime->time)
@@ -155,7 +142,7 @@ namespace multistateTurnip
 					else
 					{
 						ratesForEdges[k][minRepairTime->level] = minRepairTime->rate;
-						turnipPrivate::edgeRepairData time;
+						edgeRepairData time;
 						time.time = perEdgeRepairTimes[j];
 						time.level = j;
 						time.edge = k;
@@ -167,12 +154,12 @@ namespace multistateTurnip
 				ratesForEdges[k][minRepairTime->level] = minRepairTime->rate;
 				std::fill(alreadySeen[k].begin(), alreadySeen[k].end(), false);
 			}
-			std::sort(repairTimes.begin(), repairTimes.end(), turnipPrivate::timeSorter);
+			std::sort(repairTimes.begin(), repairTimes.end(), timeSorter);
 			//No edges have yet been seen
 			//The first rate is going to be sumAllRates
 			mpfr_class currentRate = sumAllRates;
 			//which edge in the permutation are we currently looking at?
-			std::vector<turnipPrivate::edgeRepairData>::iterator repairTimeIterator = repairTimes.begin();
+			std::vector<edgeRepairData>::iterator repairTimeIterator = repairTimes.begin();
 			//have we reached the point where we've got sufficient flow?
 			bool insufficientFlow = true;
 			//these are going to be the rates for the matrix exponential

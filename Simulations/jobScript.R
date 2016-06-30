@@ -2,7 +2,7 @@ source("./generateScenarios.R")
 SCENARIO_INDEX <- as.integer(Sys.getenv("SCENARIO_INDEX"))
 cat("SCENARIO_INDEX=", SCENARIO_INDEX, "\n", sep="")
 
-nReps <- scenarios[SCENARIO_INDEX, "nReps"]
+nReps <- 100
 
 outputFile <- file.path("results", scenarios[SCENARIO_INDEX, "file"])
 tmpFile <- paste0(outputFile, ".tmp")
@@ -15,7 +15,6 @@ method <- scenarios[SCENARIO_INDEX, "method"]
 demand <- scenarios[SCENARIO_INDEX, "demand"]
 n <- scenarios[SCENARIO_INDEX, "n"]
 graph <- scenarios[SCENARIO_INDEX, "graph"]
-nCapacities <- scenarios[SCENARIO_INDEX, "nCapacities"]
 
 getCapacityMatrix <- function(rho, bi, epsilon)
 {
@@ -26,28 +25,7 @@ getCapacityMatrix <- function(rho, bi, epsilon)
 
 interestVertices <- as.integer(str_split(scenarios[SCENARIO_INDEX, "interestVertices"], ",")[[1]])
 
-if(graph == "dodecahedron")
-{
-	graph <- igraph::read.graph("./dodecahedron.graphml", format = "graphml")
-	capacityMatrix <- data.frame(capacity = 0:(nCapacities-1), probability = epsilon)
-	capacityMatrix[nrow(capacityMatrix), "probability"] <- 1 - (nCapacities-1)*epsilon
-	capacityList <- replicate(30, capacityMatrix, simplify=FALSE)
-
-	maxCapacity <- max(capacityMatrix[,1])
-	maxPossibleFlow <- 3*maxCapacity
-	replications <- 100
-} else if(graph == "grid10")
-{
-	graph <- igraph::graph.lattice(length = 10, dim = 2)
-
-	capacityMatrix <- data.frame(capacity = 0:(nCapacities-1), probability = epsilon)
-	capacityMatrix[nrow(capacityMatrix), "probability"] <- 1 - (nCapacities-1)*epsilon
-	capacityList <- replicate(180, capacityMatrix, simplify=FALSE)
-
-	maxCapacity <- max(capacityMatrix[,1])
-	maxPossibleFlow <- 2*maxCapacity
-	replications <- 100
-} else if(graph == "dodecahedron5EqualCapacity")
+if(graph == "dodecahedron5EqualCapacity")
 {
 	graph <- igraph::read.graph("./dodecahedron.graphml", format = "graphml")
 	capacityMatrix <- getCapacityMatrix(rho = 0.7, epsilon = epsilon, bi = 4)
@@ -55,7 +33,6 @@ if(graph == "dodecahedron")
 
 	maxCapacity <- max(capacityMatrix[,1])
 	maxPossibleFlow <- 3*maxCapacity
-	replications <- 1
 } else if(graph == "dodecahedron15UnequalCapacity")
 {
 	graph <- igraph::read.graph("./dodecahedron.graphml", format = "graphml")
@@ -64,7 +41,6 @@ if(graph == "dodecahedron")
 	capacityList <- replicate(30, capacityMatrix1, simplify=FALSE)
 
 	maxPossibleFlow <- 30
-	replications <- 1
 
 	#Work out which edges should have the second capacity distribution
 	edgeMatrix <- igraph::get.edges(graph, igraph::E(graph))
@@ -80,8 +56,17 @@ if(graph == "dodecahedron")
 	edgeMatrix <- igraph::get.edges(graph, igraph::E(graph))
 	secondCapacityEdges <- which(edgeMatrix[,1] %in% c(1, 100) | edgeMatrix[,2] %in% c(1, 100))
 	capacityList[secondCapacityEdges] <- replicate(length(secondCapacityEdges), capacityMatrix2, simplify=FALSE)
-	replications <- 1
 	maxPossibleFlow <- 24
+} else if(graph == "grid10x10_2")
+{
+	graph <- igraph::make_lattice(dimvector = c(10,10))
+	graph <- igraph::add_vertices(graph, 2)
+	extraEdges <- c(unlist(rbind(1:10, 101)), unlist(rbind(91:100, 102)))
+	graph <- igraph::add_edges(graph, extraEdges)
+
+	capacityMatrix1 <- getCapacityMatrix(rho = 0.5, epsilon = epsilon, bi = 10)
+	capacityList <- replicate(180+20, capacityMatrix1, simplify=FALSE)
+	maxPossibleFlow <- 100
 } else
 {
 	stop("Unknown graph")
@@ -95,7 +80,7 @@ if(method == "crudeMC")
 		load(outputFile)
 		counter <- length(results)+1
 	} else results <- list()
-	while(counter < replications + 1)
+	while(counter < nReps + 1)
 	{
 		results[[counter]] <- crudeMC(graph = graph, capacityMatrix = capacityList, n = n, threshold = demand, seed = SCENARIO_INDEX, interestVertices = interestVertices) 
 		save(results, file = tmpFile)
@@ -110,7 +95,7 @@ if(method == "crudeMC")
 		load(outputFile)
 		counter <- length(results)+1
 	} else results <- list()
-	while(counter < replications + 1)
+	while(counter < nReps + 1)
 	{
 		results[[counter]] <- pmc(graph = graph, capacityMatrix = capacityList, n = n, threshold = demand, seed = SCENARIO_INDEX + counter * 100000L, interestVertices = interestVertices)
 		save(results, file = tmpFile)
@@ -125,7 +110,7 @@ if(method == "crudeMC")
 		load(outputFile)
 		counter <- length(results)+1
 	} else results <- list()
-	while(counter < replications + 1)
+	while(counter < nReps + 1)
 	{
 		results[[counter]] <- turnip(graph = graph, capacityMatrix = capacityList, n = n, threshold = demand, seed = SCENARIO_INDEX + counter * 100000L, interestVertices = interestVertices, useAllPointsMaxFlow = FALSE)
 		save(results, file = tmpFile)
@@ -140,7 +125,7 @@ if(method == "crudeMC")
 		load(outputFile)
 		counter <- length(results)+1
 	} else results <- list()
-	while(counter < replications + 1)
+	while(counter < nReps + 1)
 	{
 		results[[counter]] <- turnip(graph = graph, capacityMatrix = capacityList, n = n, threshold = demand, seed = SCENARIO_INDEX + counter * 100000L, interestVertices = interestVertices, useAllPointsMaxFlow = TRUE, allPointsMaxFlowIncrement = 3L)
 		save(results, file = tmpFile)
@@ -155,7 +140,7 @@ if(method == "crudeMC")
 		load(outputFile)
 		counter <- length(results)+1
 	} else results <- list()
-	while(counter < replications + 1)
+	while(counter < nReps + 1)
 	{
 		results[[counter]] <- turnip(graph = graph, capacityMatrix = capacityList, n = n, threshold = demand, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, useAllPointsMaxFlow = TRUE, allPointsMaxFlowIncrement = 2L)
 		save(results, file = tmpFile)
@@ -170,7 +155,7 @@ if(method == "crudeMC")
 		load(outputFile)
 		counter <- length(results)+1
 	} else results <- list()
-	while(counter < replications + 1)
+	while(counter < nReps + 1)
 	{
 		results[[counter]] <- turnip(graph = graph, capacityMatrix = capacityList, n = n, threshold = demand, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, useAllPointsMaxFlow = TRUE, allPointsMaxFlowIncrement = 1L)
 		save(results, file = tmpFile)
@@ -189,7 +174,7 @@ if(method == "crudeMC")
 	{
 		levels <- seq(maxPossibleFlow, demand, -2)
 	} else levels <- seq(maxPossibleFlow-1, demand, -2)
-	while(counter < replications + 1)
+	while(counter < nReps + 1)
 	{
 		results[[counter]] <- generalisedSplittingFixedEffort(graph = graph, capacityMatrix = capacityList, n = n, levels = levels, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, verbose=FALSE)
 		save(results, file = tmpFile)
@@ -199,10 +184,10 @@ if(method == "crudeMC")
 } else if(method == "gsFS")
 {
 	counter <- 1
-	if(maxPossibleFlow - demand %% 2 == 0)
+	if((maxPossibleFlow - demand) %% 2 == 0)
 	{
 		levels <- seq(maxPossibleFlow, demand, -2)
-	} else levels <- seq(maxPossibleFlow-1, demand, -2)
+	} else levels <- c(maxPossibleFlow, seq(maxPossibleFlow-1, demand, -2))
 	if(file.exists(outputFile))
 	{
 		load(outputFile)
@@ -213,7 +198,7 @@ if(method == "crudeMC")
 		pilot <- generalisedSplittingFixedEffort(graph = graph, capacityMatrix = capacityList, n = n, levels = levels, seed = SCENARIO_INDEX + counter * 100000 - 1, interestVertices = interestVertices, verbose=FALSE)
 		factors <- round(tail(1/pilot@levelProbabilities, -1))
 	}
-	while(counter < replications + 1)
+	while(counter < nReps + 1)
 	{
 		results[[counter]] <- generalisedSplittingFixedFactors(graph = graph, capacityMatrix = capacityList, n = n, levels = levels, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, verbose=FALSE, factors = factors)
 		save(pilot, factors, results, file = tmpFile)
