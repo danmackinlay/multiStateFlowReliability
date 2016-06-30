@@ -128,7 +128,7 @@ namespace multistateTurnip
 					}
 				}
 			}
-			std::sort(repairTimes.begin(), repairTimes.end(),timeSorter);
+			std::sort(repairTimes.begin(), repairTimes.end(), timeSorter);
 			//The first rate is going to be this
 			mpfr_class currentRate = sumAllRates;
 			//which edge in the permutation are we currently looking at?

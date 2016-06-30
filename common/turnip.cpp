@@ -8,6 +8,10 @@
 #include "edmondsKarp.hpp"
 namespace multistateTurnip
 {
+	bool timeSorter(const edgeRepairData& first, const edgeRepairData& second)
+	{
+		return first.time < second.time;
+	}
 	void turnip(turnipArgs& args)
 	{
 		const Context& context = args.context;

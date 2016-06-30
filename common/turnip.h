@@ -12,10 +12,7 @@ namespace multistateTurnip
 		double time;
 		mpfr_class rate;
 	};
-	bool timeSorter(const edgeRepairData& first, const edgeRepairData& second)
-	{
-		return first.time < second.time;
-	}
+	bool timeSorter(const edgeRepairData& first, const edgeRepairData& second);
 	struct turnipArgs
 	{
 	public:

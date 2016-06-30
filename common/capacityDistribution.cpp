@@ -4,12 +4,21 @@
 #include <boost/tuple/tuple.hpp>
 namespace multistateTurnip
 {
-	capacityDistribution::capacityDistribution(const std::vector<std::pair<mpfr_class, mpfr_class>>& data)
+	bool levelSorter(const std::pair<mpfr_class, mpfr_class>& first, const std::pair<mpfr_class, mpfr_class>& second)
+	{
+		return first.first < second.first;
+	}
+	capacityDistribution::capacityDistribution(const std::vector<std::pair<mpfr_class, mpfr_class> >& data)
 		:data(data)
 	{
 		if(data.size() == 0)
 		{
 			throw std::runtime_error("Input vector cannot be empty");
+		}
+		std::sort(data.begin(), data.end(), levelSorter);
+		if(data[0].first != 0)
+		{
+			throw std::runtime_error("The smallest capacity level must be zero");
 		}
 		//Cumulative data
 		cumulativeData.resize(data.size());
