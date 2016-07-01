@@ -25,6 +25,9 @@ namespace multistateTurnip
 	SEXP generalisedSplittingFixedFactors_igraph(SEXP graph, SEXP distributions, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
 	SEXP generalisedSplittingFixedFactors_graphNEL(SEXP graph, SEXP distributions, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
 	SEXP generalisedSplittingFixedFactors_graphAM(SEXP graph, SEXP distributions, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
+	SEXP generalisedSplittingFixedFactorsEvolution_igraph(SEXP graph, SEXP distributions, SEXP n, SEXP times_sexp, SEXP level_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
+	SEXP generalisedSplittingFixedFactorsEvolution_graphNEL(SEXP graph, SEXP distributions, SEXP n, SEXP times_sexp, SEXP level_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
+	SEXP generalisedSplittingFixedFactorsEvolution_graphAM(SEXP graph, SEXP distributions, SEXP n, SEXP times_sexp, SEXP level_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
 
 }
 R_CallMethodDef callMethods[] = 
@@ -44,6 +47,9 @@ R_CallMethodDef callMethods[] =
 	{"generalisedSplittingFixedFactors_igraph", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedFactors_igraph, 8},
 	{"generalisedSplittingFixedFactors_graphNEL", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedFactors_graphNEL, 8},
 	{"generalisedSplittingFixedFactors_graphAM", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedFactors_graphAM, 8},
+	{"generalisedSplittingFixedFactorsEvolution_igraph", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedFactorsEvolution_igraph, 9},
+	{"generalisedSplittingFixedFactorsEvolution_graphNEL", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedFactorsEvolution_graphNEL, 9},
+	{"generalisedSplittingFixedFactorsEvolution_graphAM", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedFactorsEvolution_graphAM, 9},
 	{NULL, NULL, 0}
 };
 RcppExport void R_init_multiStateFlowReliability(DllInfo *info)
