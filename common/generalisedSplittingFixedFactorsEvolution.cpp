@@ -31,7 +31,6 @@ namespace multistateTurnip
 		std::vector<std::vector<double> > originalRates(nUndirectedEdges);
 		std::vector<double> maximumCapacities(2*nUndirectedEdges);
 		//The initial rate at the start of each PMC step
-		mpfr_class sumAllRates = 0;
 		for(std::size_t i = 0; i < nUndirectedEdges; i++)
 		{
 			std::vector<double>& currentEdgeRates = originalRates[i];
@@ -45,7 +44,6 @@ namespace multistateTurnip
 				mpfr_class newRate = -boost::multiprecision::log(1 - mpfr_class(cumulativeData[j+1].second)) - cumulativeRates;
 				currentEdgeRates.push_back((double)newRate);
 				cumulativeRates += newRate;
-				sumAllRates += newRate;
 			}
 		}
 		std::vector<int> edgeStartingOffset(nUndirectedEdges);
@@ -65,10 +63,10 @@ namespace multistateTurnip
 		edmondsKarpMaxFlowScratch<Context::internalDirectedGraph, double> scratch;
 
 		std::vector<double> residual(nDirectedEdges * productFactors, 0), flow(nDirectedEdges * productFactors, 0), capacity(nDirectedEdges * productFactors, 0);
-		std::vector<double> newResidual(nDirectedEdges * productFactors, 0), newFlow(nDirectedEdges * productFactors, 0), newCapacity(nDirectedEdges * productFactors);
+		std::vector<double> newResidual(nDirectedEdges * productFactors, 0), newFlow(nDirectedEdges * productFactors, 0), newCapacity(nDirectedEdges * productFactors, 0);
 		std::vector<double> maxFlows(productFactors, 0), newMaxFlows(productFactors, 0);
 
-		std::vector<double> tmpResidual(nDirectedEdges * 2), tmpFlow(nDirectedEdges * 2), tmpCapacity(nDirectedEdges * 2);
+		std::vector<double> tmpResidual(nDirectedEdges), tmpFlow(nDirectedEdges), tmpCapacity(nDirectedEdges);
 
 		std::vector<int> timeCounts;
 		timeCounts.resize(args.times.size(), 0);
@@ -95,6 +93,7 @@ namespace multistateTurnip
 				}
 				//Work out the actual capacaity of this edge
 				const std::vector<std::pair<double, double> >& data = context.getDistribution(k).getCumulativeData();
+				capacity[2*k] = capacity[2*k+1] = data.back().first;
 				for(int j = 0; j < timesThisEdge; j++)
 				{
 					if(allRepairTimes[startingOffset + j] < args.times.front())
@@ -106,6 +105,7 @@ namespace multistateTurnip
 			}
 			std::fill(flow.begin(), flow.begin() + nDirectedEdges, 0);
 			std::copy(capacity.begin(), capacity.begin()+nDirectedEdges, residual.begin());
+			maxFlows[0] = 0;
 			edmondsKarpMaxFlow(&(capacity[0]), &(flow[0]), &(residual[0]), directedGraph, source, sink, std::numeric_limits<double>::infinity(), scratch, maxFlows[0]);
 			int currentSamples = 1;
 			for(int timeCounter = 0; timeCounter < (int)args.times.size()-1; timeCounter++)
@@ -139,7 +139,7 @@ namespace multistateTurnip
 									{
 										for(int otherRepairTimeCounter = 0; otherRepairTimeCounter < repairTimeCounter; otherRepairTimeCounter++)
 										{
-											if(newAllRepairTimes[outputCounter*totalTimes + edgeStartingOffset[edgeCounter] + otherRepairTimeCounter] < newAllRepairTimes[edgeStartingOffset[edgeCounter] + repairTimeCounter])
+											if(newAllRepairTimes[outputCounter*totalTimes + edgeStartingOffset[edgeCounter] + otherRepairTimeCounter] < newAllRepairTimes[outputCounter*totalTimes + edgeStartingOffset[edgeCounter] + repairTimeCounter])
 											{
 												unconditional = true; break;
 											}
@@ -151,7 +151,7 @@ namespace multistateTurnip
 										std::copy(newCapacity.begin() + outputCounter*nDirectedEdges, newCapacity.begin() + (outputCounter+1)*nDirectedEdges, tmpCapacity.begin());
 										std::copy(newResidual.begin() + outputCounter*nDirectedEdges, newResidual.begin() + (outputCounter+1)*nDirectedEdges, tmpResidual.begin());
 										std::copy(newFlow.begin() + outputCounter*nDirectedEdges, newFlow.begin() + (outputCounter+1)*nDirectedEdges, tmpFlow.begin());
-										//The new capacity of this edge if the repair time of the current anti-shock is bigger than args.times[timeCounter]
+										//The new capacity of this edge if the repair time of the current anti-shock is bigger than args.times[timeCounter+1]
 										double increaseTo = currentEdgeCumulativeData.back().first;
 										for(int otherRepairTimeCounter = repairTimeCounter + 1; otherRepairTimeCounter < nTimes[edgeCounter]; otherRepairTimeCounter++)
 										{
@@ -160,11 +160,11 @@ namespace multistateTurnip
 												increaseTo = currentEdgeCumulativeData[otherRepairTimeCounter].first; break;
 											}
 										}
-										newCapacity[2*edgeCounter] = newCapacity[2*edgeCounter + 1] = increaseTo;
-										newResidual[2*edgeCounter] = increaseTo - newFlow[2*edgeCounter];
-										newResidual[2*edgeCounter + 1] = increaseTo - newFlow[2*edgeCounter + 1];
+										tmpCapacity[2*edgeCounter] = tmpCapacity[2*edgeCounter + 1] = increaseTo;
+										tmpResidual[2*edgeCounter] = increaseTo - tmpFlow[2*edgeCounter];
+										tmpResidual[2*edgeCounter + 1] = increaseTo - tmpFlow[2*edgeCounter + 1];
 										double newMaxFlow = newMaxFlows[outputCounter];
-										edmondsKarpMaxFlow(&(newCapacity[0]), &(newFlow[0]), &(newResidual[0]), directedGraph, source, sink, std::numeric_limits<double>::infinity(), scratch, newMaxFlow);
+										edmondsKarpMaxFlow(&(tmpCapacity[0]), &(tmpFlow[0]), &(tmpResidual[0]), directedGraph, source, sink, std::numeric_limits<double>::infinity(), scratch, newMaxFlow);
 										if(newMaxFlow < args.level) unconditional = true;
 									}
 									if(unconditional)
@@ -186,7 +186,6 @@ namespace multistateTurnip
 											break;
 										}
 									}
-									edmondsKarpMaxFlow(&(newCapacity[outputCounter*nDirectedEdges]), &(newResidual[outputCounter*nDirectedEdges]), &(newFlow[outputCounter*nDirectedEdges]), directedGraph, source, sink, std::numeric_limits<double>::infinity(), scratch, newMaxFlows[outputCounter]);
 									updateArgs.edge = *edgeIterator;
 									updateArgs.flow = &(newFlow[outputCounter*nDirectedEdges]);
 									updateArgs.capacity = &(newCapacity[outputCounter*nDirectedEdges]);
@@ -194,6 +193,22 @@ namespace multistateTurnip
 									updateArgs.newCapacity = newCapacityThisEdge;
 									double previousMaxFlow = newMaxFlows[outputCounter];
 									updateFlowIncremental(updateArgs, previousMaxFlow, newMaxFlows[outputCounter]);
+									if(newMaxFlows[outputCounter] < 0)
+									{
+										throw std::runtime_error("Internal error");
+									}
+									/*
+									if(newMaxFlows[outputCounter] == 0)
+									{
+										for(int i = 0; i < nDirectedEdges; i++)
+										{
+											if(newFlow[outputCounter * nDirectedEdges + i] != 0) throw std::runtime_error("Internal error");
+										}
+									}
+									for(int i = 0; i < nDirectedEdges; i++)
+									{
+										if(newFlow[outputCounter * nDirectedEdges + i] > newCapacity[outputCounter * nDirectedEdges + i]) throw std::runtime_error("Internal error");
+									}*/
 								}
 							}
 							outputCounter++;
@@ -203,6 +218,7 @@ namespace multistateTurnip
 								memcpy(&(newFlow[outputCounter*nDirectedEdges]), &(newFlow[(outputCounter-1)*nDirectedEdges]), sizeof(double)*nDirectedEdges);
 								memcpy(&(newResidual[outputCounter*nDirectedEdges]), &(newResidual[(outputCounter-1)*nDirectedEdges]), sizeof(double)*nDirectedEdges);
 								memcpy(&(newAllRepairTimes[outputCounter*totalTimes]), &(newAllRepairTimes[(outputCounter-1)*totalTimes]), sizeof(double)*totalTimes);
+								newMaxFlows[outputCounter] = newMaxFlows[outputCounter - 1];
 
 							}
 						}
@@ -218,6 +234,29 @@ namespace multistateTurnip
 				if(currentSamples == 0)
 				{
 					break;
+				}
+				//Update all the capacities, by lowing the time threshold. This removes anti-shocks, so increasing the capacities. So only one max-flow application is required. 
+				for(int sampleCounter = 0; sampleCounter < currentSamples; sampleCounter++)
+				{
+					for(int edgeCounter = 0; edgeCounter < nUndirectedEdges; edgeCounter++)
+					{
+						const capacityDistribution& currentEdgeDistribution = context.getDistribution(edgeCounter);
+						const std::vector<std::pair<double, double> >& currentEdgeCumulativeData = currentEdgeDistribution.getCumulativeData();
+						capacity[sampleCounter * nDirectedEdges + 2*edgeCounter] = capacity[sampleCounter * nDirectedEdges + 2*edgeCounter + 1] = currentEdgeCumulativeData.back().first;
+						residual[sampleCounter * nDirectedEdges + 2*edgeCounter] = capacity[sampleCounter * nDirectedEdges + 2*edgeCounter] - flow[sampleCounter * nDirectedEdges + 2*edgeCounter];
+						residual[sampleCounter * nDirectedEdges + 2*edgeCounter + 1] = capacity[sampleCounter * nDirectedEdges + 2*edgeCounter + 1] - flow[sampleCounter * nDirectedEdges + 2*edgeCounter + 1];
+						for(int repairTimeCounter = 0; repairTimeCounter < nTimes[edgeCounter]; repairTimeCounter++)
+						{
+							if(allRepairTimes[sampleCounter*totalTimes + edgeStartingOffset[edgeCounter] + repairTimeCounter] < args.times[timeCounter+1])
+							{
+								capacity[sampleCounter * nDirectedEdges + 2*edgeCounter] = capacity[sampleCounter * nDirectedEdges + 2*edgeCounter + 1] = currentEdgeCumulativeData[repairTimeCounter].first;
+								residual[sampleCounter * nDirectedEdges + 2*edgeCounter] = currentEdgeCumulativeData[repairTimeCounter].first - flow[sampleCounter * nDirectedEdges + 2*edgeCounter];
+								residual[sampleCounter * nDirectedEdges + 2*edgeCounter + 1] = currentEdgeCumulativeData[repairTimeCounter].first - flow[sampleCounter * nDirectedEdges + 2*edgeCounter + 1];
+								break;
+							}
+						}
+					}
+					edmondsKarpMaxFlow(&(capacity[sampleCounter*nDirectedEdges]), &(flow[sampleCounter*nDirectedEdges]), &(residual[sampleCounter*nDirectedEdges]), directedGraph, source, sink, std::numeric_limits<double>::infinity(), scratch, maxFlows[sampleCounter]);
 				}
 			}
 			int acceptedSamples = 0;
