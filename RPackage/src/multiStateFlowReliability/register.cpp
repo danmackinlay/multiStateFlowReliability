@@ -28,6 +28,9 @@ namespace multistateTurnip
 	SEXP generalisedSplittingFixedFactorsEvolution_igraph(SEXP graph, SEXP distributions, SEXP n, SEXP times_sexp, SEXP level_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
 	SEXP generalisedSplittingFixedFactorsEvolution_graphNEL(SEXP graph, SEXP distributions, SEXP n, SEXP times_sexp, SEXP level_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
 	SEXP generalisedSplittingFixedFactorsEvolution_graphAM(SEXP graph, SEXP distributions, SEXP n, SEXP times_sexp, SEXP level_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp);
+	SEXP generalisedSplittingAdaptiveEvolution_igraph(SEXP graph, SEXP distributions, SEXP n, SEXP level_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP fraction_sexp);
+	SEXP generalisedSplittingAdaptiveEvolution_graphNEL(SEXP graph, SEXP distributions, SEXP n, SEXP level_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP fraction_sexp);
+	SEXP generalisedSplittingAdaptiveEvolution_graphAM(SEXP graph, SEXP distributions, SEXP n, SEXP level_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP fraction_sexp);
 
 }
 R_CallMethodDef callMethods[] = 
@@ -50,6 +53,9 @@ R_CallMethodDef callMethods[] =
 	{"generalisedSplittingFixedFactorsEvolution_igraph", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedFactorsEvolution_igraph, 9},
 	{"generalisedSplittingFixedFactorsEvolution_graphNEL", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedFactorsEvolution_graphNEL, 9},
 	{"generalisedSplittingFixedFactorsEvolution_graphAM", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedFactorsEvolution_graphAM, 9},
+	{"generalisedSplittingAdaptiveEvolution_igraph", (DL_FUNC)&multistateTurnip::generalisedSplittingAdaptiveEvolution_igraph, 8},
+	{"generalisedSplittingAdaptiveEvolution_graphNEL", (DL_FUNC)&multistateTurnip::generalisedSplittingAdaptiveEvolution_graphNEL, 8},
+	{"generalisedSplittingAdaptiveEvolution_graphAM", (DL_FUNC)&multistateTurnip::generalisedSplittingAdaptiveEvolution_graphAM, 8},
 	{NULL, NULL, 0}
 };
 RcppExport void R_init_multiStateFlowReliability(DllInfo *info)

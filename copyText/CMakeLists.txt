@@ -7,7 +7,7 @@ else()
 endif()
 
 find_package(Rcpp REQUIRED)
-set(RFiles R/crudeMC.R R/onLoad.R R/classes.R R/pmc.R R/turnip.R R/generalisedSplittingFixedEffort.R R/generalisedSplittingFixedFactors.R R/generalisedSplittingFixedFactorsEvolution.R)
+set(RFiles R/crudeMC.R R/onLoad.R R/classes.R R/pmc.R R/turnip.R R/generalisedSplittingFixedEffort.R R/generalisedSplittingFixedFactors.R R/generalisedSplittingFixedFactorsEvolution.R R/generalisedSplittingAdaptiveEvolution.R)
 set(RPackageFiles DESCRIPTION NAMESPACE ${RFiles})
 
 #Find location of Rcpp_exceptions.R 

@@ -20,3 +20,4 @@ Collate:
 	'generalisedSplittingFixedFactors.R'
 	'generalisedSplittingFixedFactorsEvolution.R'
 	'Rcpp_exceptions.R'
+	'generalisedSplittingAdaptiveEvolution.R'

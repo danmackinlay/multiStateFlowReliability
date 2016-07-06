@@ -197,18 +197,6 @@ namespace multistateTurnip
 									{
 										throw std::runtime_error("Internal error");
 									}
-									/*
-									if(newMaxFlows[outputCounter] == 0)
-									{
-										for(int i = 0; i < nDirectedEdges; i++)
-										{
-											if(newFlow[outputCounter * nDirectedEdges + i] != 0) throw std::runtime_error("Internal error");
-										}
-									}
-									for(int i = 0; i < nDirectedEdges; i++)
-									{
-										if(newFlow[outputCounter * nDirectedEdges + i] > newCapacity[outputCounter * nDirectedEdges + i]) throw std::runtime_error("Internal error");
-									}*/
 								}
 							}
 							outputCounter++;
@@ -238,7 +226,7 @@ namespace multistateTurnip
 				//Update all the capacities, by lowing the time threshold. This removes anti-shocks, so increasing the capacities. So only one max-flow application is required. 
 				for(int sampleCounter = 0; sampleCounter < currentSamples; sampleCounter++)
 				{
-					for(int edgeCounter = 0; edgeCounter < nUndirectedEdges; edgeCounter++)
+					for(int edgeCounter = 0; edgeCounter < (int)nUndirectedEdges; edgeCounter++)
 					{
 						const capacityDistribution& currentEdgeDistribution = context.getDistribution(edgeCounter);
 						const std::vector<std::pair<double, double> >& currentEdgeCumulativeData = currentEdgeDistribution.getCumulativeData();
