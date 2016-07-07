@@ -90,9 +90,12 @@ namespace multistateTurnip
 	
 		edmondsKarpMaxFlowScratch<Context::internalDirectedGraph, double> scratch;
 
+		//Max flow data at the time of failure
 		std::vector<double> residual(nDirectedEdges * args.n, 0), flow(nDirectedEdges * args.n, 0), capacity(nDirectedEdges * args.n, 0);
 		std::vector<double> newResidual(nDirectedEdges * args.n, 0), newFlow(nDirectedEdges * args.n, 0), newCapacity(nDirectedEdges * args.n, 0);
 		std::vector<double> maxFlows(args.n, 0), newMaxFlows(args.n, 0);
+		//Max flow data at the threshold time
+		std::vector<double> capacityThreshold(nDirectedEdges * args.n, 0), newCapacityThreshold(nDirectedEdges * args.n, 0);
 		std::vector<networkFailureTime> networkFailureTimes(args.n), newNetworkFailureTimes(args.n);
 		//A vector that gives the index of each failure time within networkFailureTimes / newNetworkFailureTimes. Needed because networkFailureTimes / newNetworkFailureTimes are sorted. 
 		std::vector<int> unsortedAllFailureTimes(args.n*totalTimes), newUnsortedAllFailureTimes(args.n*totalTimes);
@@ -175,11 +178,26 @@ namespace multistateTurnip
 				return;
 			}
 			args.times.push_back(threshold);
+			std::fill(capacityThreshold.begin(), capacityThreshold.end(), 0);
+			for(int sampleCounter = 0; sampleCounter < args.n/args.fraction; sampleCounter++)
+			{
+				int index = networkFailureTimes[sampleCounter].index;
+				for(int i = 0; i < totalTimes; i++)
+				{
+					edgeFailureData& currentFailure = allFailureTimes[index*totalTimes + i];
+					const std::vector<std::pair<double, double> >& cumulativeData = context.getDistribution(currentFailure.edge).getCumulativeData();
+					if(currentFailure.time < threshold)
+					{
+						capacityThreshold[index*nDirectedEdges + 2*currentFailure.edge] = capacityThreshold[index*nDirectedEdges + 2*currentFailure.edge + 1] = std::max(capacityThreshold[index*nDirectedEdges + 2*currentFailure.edge], cumulativeData[currentFailure.level].first);
+					}
+				}
+			}
 			int outputCounter = 0;
 			for(int i = 0; i < args.n/args.fraction; i++)
 			{
 				int index = networkFailureTimes[i].index;
 				memcpy(&(newCapacity[outputCounter*nDirectedEdges]), &(capacity[index*nDirectedEdges]), sizeof(double)*nDirectedEdges);
+				memcpy(&(newCapacityThreshold[outputCounter*nDirectedEdges]), &(capacityThreshold[index*nDirectedEdges]), sizeof(double)*nDirectedEdges);
 				memcpy(&(newFlow[outputCounter*nDirectedEdges]), &(flow[index*nDirectedEdges]), sizeof(double)*nDirectedEdges);
 				memcpy(&(newResidual[outputCounter*nDirectedEdges]), &(residual[index*nDirectedEdges]), sizeof(double)*nDirectedEdges);
 				memcpy(&(newAllFailureTimes[outputCounter*totalTimes]), &(allFailureTimes[index*totalTimes]), sizeof(edgeFailureData)*totalTimes);
@@ -214,16 +232,16 @@ namespace multistateTurnip
 									increaseTo = currentEdgeCumulativeData[otherRepairTimeCounter].first; break;
 								}
 							}
-							if(increaseTo <= newCapacity[outputCounter*nDirectedEdges + 2*edgeCounter + 1]) unconditional = true;
+							if(increaseTo <= newCapacityThreshold[outputCounter*nDirectedEdges + 2*edgeCounter + 1]) unconditional = true;
 							else
 							{
-								std::copy(newCapacity.begin() + outputCounter*nDirectedEdges, newCapacity.begin() + (outputCounter+1)*nDirectedEdges, tmpCapacity.begin());
-								std::copy(newResidual.begin() + outputCounter*nDirectedEdges, newResidual.begin() + (outputCounter+1)*nDirectedEdges, tmpResidual.begin());
-								std::copy(newFlow.begin() + outputCounter*nDirectedEdges, newFlow.begin() + (outputCounter+1)*nDirectedEdges, tmpFlow.begin());
+								std::copy(newCapacityThreshold.begin() + outputCounter*nDirectedEdges, newCapacityThreshold.begin() + (outputCounter+1)*nDirectedEdges, tmpCapacity.begin());
+								std::copy(newCapacityThreshold.begin() + outputCounter*nDirectedEdges, newCapacityThreshold.begin() + (outputCounter+1)*nDirectedEdges, tmpResidual.begin());
+								std::fill(tmpFlow.begin(), tmpFlow.end(), 0);
 								tmpCapacity[2*edgeCounter] = tmpCapacity[2*edgeCounter + 1] = increaseTo;
 								tmpResidual[2*edgeCounter] = increaseTo - tmpFlow[2*edgeCounter];
 								tmpResidual[2*edgeCounter + 1] = increaseTo - tmpFlow[2*edgeCounter + 1];
-								double newMaxFlow = newMaxFlows[outputCounter];
+								double newMaxFlow = 0;
 								edmondsKarpMaxFlow(&(tmpCapacity[0]), &(tmpFlow[0]), &(tmpResidual[0]), directedGraph, source, sink, std::numeric_limits<double>::infinity(), scratch, newMaxFlow);
 								if(newMaxFlow < args.level) unconditional = true;
 							}
@@ -263,16 +281,23 @@ namespace multistateTurnip
 								newUnsortedAllFailureTimes[outputCounter*totalTimes + edgeStartingOffset[k->edge] + k->level] = (int)std::distance(newAllFailureTimes.begin() + outputCounter * totalTimes, k);
 							}
 							//Update the capacities so they still reflect the capacities at time currentNetworkFailure.time
-							double newCapacityAfterResampling = maximumCapacities[2*edgeCounter];
+							double newCapacityAfterResampling = maximumCapacities[2*edgeCounter], newCapacityAfterResamplingThreshold = maximumCapacities[2*edgeCounter];
+							bool minimumFound = false, minimumFoundThreshold = false;;
 							for(int k = 0; k < nTimes[edgeCounter]; k++)
 							{
 								int kk = newUnsortedAllFailureTimes[outputCounter*totalTimes + startingOffset + k];
-								if(newAllFailureTimes[outputCounter*totalTimes + kk].time <= currentNetworkFailure.time)
+								if(newAllFailureTimes[outputCounter*totalTimes + kk].time <= currentNetworkFailure.time && !minimumFound)
 								{
 									newCapacityAfterResampling = currentEdgeCumulativeData[k].first;
-									break;
+									minimumFound = true;
+								}
+								if(newAllFailureTimes[outputCounter*totalTimes + kk].time < threshold &&!minimumFoundThreshold)
+								{
+									newCapacityAfterResamplingThreshold = currentEdgeCumulativeData[k].first;
+									minimumFoundThreshold = true;
 								}
 							}
+							newCapacityThreshold[outputCounter * nDirectedEdges + 2*edgeCounter] = newCapacityThreshold[outputCounter * nDirectedEdges + 2*edgeCounter + 1] = newCapacityAfterResamplingThreshold;
 							updateArgs.newCapacity = newCapacityAfterResampling;
 							updateArgs.edge = edges[2*edgeCounter];
 							updateArgs.capacity = &(newCapacity[outputCounter*nDirectedEdges]);
@@ -347,6 +372,7 @@ namespace multistateTurnip
 					if(j != args.fraction - 1)
 					{
 						memcpy(&(newCapacity[outputCounter*nDirectedEdges]), &(newCapacity[(outputCounter - 1)*nDirectedEdges]), sizeof(double)*nDirectedEdges);
+						memcpy(&(newCapacityThreshold[outputCounter*nDirectedEdges]), &(newCapacityThreshold[(outputCounter - 1)*nDirectedEdges]), sizeof(double)*nDirectedEdges);
 						memcpy(&(newFlow[outputCounter*nDirectedEdges]), &(newFlow[(outputCounter - 1)*nDirectedEdges]), sizeof(double)*nDirectedEdges);
 						memcpy(&(newResidual[outputCounter*nDirectedEdges]), &(newResidual[(outputCounter - 1)*nDirectedEdges]), sizeof(double)*nDirectedEdges);
 						memcpy(&(newAllFailureTimes[outputCounter*totalTimes]), &(newAllFailureTimes[(outputCounter - 1)*totalTimes]), sizeof(edgeFailureData)*totalTimes);
