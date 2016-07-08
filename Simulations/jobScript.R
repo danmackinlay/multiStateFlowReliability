@@ -164,26 +164,6 @@ if(method == "crudeMC")
 		file.rename(from = tmpFile, to = outputFile)
 		counter <- counter + 1
 	}
-} else if(method == "gsFE")
-{
-	counter <- 1
-	if(file.exists(outputFile))
-	{
-		load(outputFile)
-		counter <- length(results)+1
-	} else 
-	{
-		results <- list()
-		pilot <- generalisedSplittingAdaptiveEvolution(graph = graph, capacityMatrix = capacityList, n = 100000, seed = SCENARIO_INDEX + counter * 100000 - 1, interestVertices = interestVertices, verbose=FALSE, fraction = 10, level = demand)
-		factors <- rep(10, length(pilot@times)-1)
-	}
-	while(counter < nReps + 1)
-	{
-		results[[counter]] <- generalisedSplittingFixedEffortEvolution(graph = graph, capacityMatrix = capacityList, n = n, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, verbose=FALSE, factors = factors, level = demand)
-		save(results, file = tmpFile)
-		file.rename(from = tmpFile, to = outputFile)
-		counter <- counter + 1
-	}
 } else if(method == "gsFS")
 {
 	counter <- 1
