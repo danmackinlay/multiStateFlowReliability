@@ -1,3 +1,5 @@
 /results
 /jobScript.Rout.*
 /slurm-*
+/multiStateFlowReliability.po*
+/multiStateFlowReliability.o*

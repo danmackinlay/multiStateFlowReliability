@@ -314,7 +314,7 @@ namespace multistateTurnip
 								while(currentFailureIterator != newAllFailureTimes.begin() + (outputCounter + 1) * totalTimes && newMaxFlows[outputCounter] >= args.level)
 								{
 									const capacityDistribution& currentFailureEdgeDistribution = context.getDistribution(currentFailureIterator->edge);
-									updateArgs.newCapacity = std::min(currentFailureEdgeDistribution.getCumulativeData()[currentFailureIterator->level].first, newCapacity[outputCounter*nDirectedEdges + edgeStartingOffset[currentFailureIterator->edge] + currentFailureIterator->level]);
+									updateArgs.newCapacity = std::min(currentFailureEdgeDistribution.getCumulativeData()[currentFailureIterator->level].first, newCapacity[outputCounter*nDirectedEdges + 2*currentFailureIterator->edge]);
 									updateArgs.edge = edges[2*currentFailureIterator->edge];
 									updateArgs.capacity = &(newCapacity[outputCounter*nDirectedEdges]);
 									updateArgs.flow = &(newFlow[outputCounter*nDirectedEdges]);

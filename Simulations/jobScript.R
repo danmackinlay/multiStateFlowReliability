@@ -1,8 +1,6 @@
 source("./generateScenarios.R")
 SCENARIO_INDEX <- as.integer(Sys.getenv("SCENARIO_INDEX"))
-cat("SCENARIO_INDEX=", SCENARIO_INDEX, "\n", sep="")
 
-nReps <- 100
 
 outputFile <- file.path("results", scenarios[SCENARIO_INDEX, "file"])
 tmpFile <- paste0(outputFile, ".tmp")
@@ -15,6 +13,10 @@ method <- scenarios[SCENARIO_INDEX, "method"]
 demand <- scenarios[SCENARIO_INDEX, "demand"]
 n <- scenarios[SCENARIO_INDEX, "n"]
 graph <- scenarios[SCENARIO_INDEX, "graph"]
+nReps <- scenarios[SCENARIO_INDEX, "nReps"]
+
+cat("SCENARIO_INDEX=", SCENARIO_INDEX, "\n", sep="")
+cat("method=", method, "\n", sep="")
 
 getCapacityMatrix <- function(rho, bi, epsilon)
 {
@@ -169,14 +171,15 @@ if(method == "crudeMC")
 	{
 		load(outputFile)
 		counter <- length(results)+1
-	} else results <- list()
-	if(maxPossibleFlow - demand %% 2 == 0)
+	} else 
 	{
-		levels <- seq(maxPossibleFlow, demand, -2)
-	} else levels <- seq(maxPossibleFlow-1, demand, -2)
+		results <- list()
+		pilot <- generalisedSplittingAdaptiveEvolution(graph = graph, capacityMatrix = capacityList, n = 100000, seed = SCENARIO_INDEX + counter * 100000 - 1, interestVertices = interestVertices, verbose=FALSE, fraction = 10, level = demand)
+		factors <- rep(10, length(pilot@times)-1)
+	}
 	while(counter < nReps + 1)
 	{
-		results[[counter]] <- generalisedSplittingFixedEffort(graph = graph, capacityMatrix = capacityList, n = n, levels = levels, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, verbose=FALSE)
+		results[[counter]] <- generalisedSplittingFixedEffortEvolution(graph = graph, capacityMatrix = capacityList, n = n, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, verbose=FALSE, factors = factors, level = demand)
 		save(results, file = tmpFile)
 		file.rename(from = tmpFile, to = outputFile)
 		counter <- counter + 1
@@ -184,10 +187,6 @@ if(method == "crudeMC")
 } else if(method == "gsFS")
 {
 	counter <- 1
-	if((maxPossibleFlow - demand) %% 2 == 0)
-	{
-		levels <- seq(maxPossibleFlow, demand, -2)
-	} else levels <- c(maxPossibleFlow, seq(maxPossibleFlow-1, demand, -2))
 	if(file.exists(outputFile))
 	{
 		load(outputFile)
@@ -195,12 +194,12 @@ if(method == "crudeMC")
 	} else 
 	{
 		results <- list()
-		pilot <- generalisedSplittingFixedEffort(graph = graph, capacityMatrix = capacityList, n = n, levels = levels, seed = SCENARIO_INDEX + counter * 100000 - 1, interestVertices = interestVertices, verbose=FALSE)
-		factors <- round(tail(1/pilot@levelProbabilities, -1))
+		pilot <- generalisedSplittingAdaptiveEvolution(graph = graph, capacityMatrix = capacityList, n = 100000, seed = SCENARIO_INDEX + counter * 100000 - 1, interestVertices = interestVertices, verbose=FALSE, fraction = 10, level = demand)
+		factors <- rep(10, length(pilot@times)-1)
 	}
 	while(counter < nReps + 1)
 	{
-		results[[counter]] <- generalisedSplittingFixedFactors(graph = graph, capacityMatrix = capacityList, n = n, levels = levels, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, verbose=FALSE, factors = factors)
+		results[[counter]] <- generalisedSplittingFixedFactorsEvolution(graph = graph, capacityMatrix = capacityList, n = n, times = pilot@times, seed = SCENARIO_INDEX + counter * 100000, interestVertices = interestVertices, verbose=FALSE, factors = factors, level = demand)
 		save(pilot, factors, results, file = tmpFile)
 		file.rename(from = tmpFile, to = outputFile)
 		counter <- counter + 1
