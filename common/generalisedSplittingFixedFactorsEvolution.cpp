@@ -18,8 +18,8 @@ namespace multistateTurnip
 		args.estimate = 1;
 
 		//Maximum number of samples at any one time.
-		int productFactors = 1;
-		for(std::vector<int>::iterator i = args.splittingFactors.begin(); i != args.splittingFactors.end(); i++) productFactors *= *i;
+		std::size_t productFactors = 1;
+		for(std::vector<int>::iterator i = args.splittingFactors.begin(); i != args.splittingFactors.end(); i++) productFactors *= (std::size_t)*i;
 
 		const Context& context = args.context;
 		int source = context.getSource(), sink = context.getSink();
@@ -49,22 +49,22 @@ namespace multistateTurnip
 		std::vector<int> edgeStartingOffset(nUndirectedEdges);
 		std::vector<int> nTimes(nUndirectedEdges);
 
-		int totalTimes = 0;
+		std::size_t totalTimes = 0;
 		for(std::size_t i = 0; i < nUndirectedEdges; i++)
 		{
 			int timesThisEdge = context.getDistribution((int)i).getData().size() - 1;
 			nTimes[i] = timesThisEdge;
 			edgeStartingOffset[i] = totalTimes;
-			totalTimes += timesThisEdge;
+			totalTimes += (std::size_t)timesThisEdge;
 		}
 
-		std::vector<double> allRepairTimes(totalTimes*productFactors), newAllRepairTimes(totalTimes*productFactors);
+		std::vector<double> allRepairTimes(totalTimes), newAllRepairTimes;
 	
 		edmondsKarpMaxFlowScratch<Context::internalDirectedGraph, double> scratch;
 
-		std::vector<double> residual(nDirectedEdges * productFactors, 0), flow(nDirectedEdges * productFactors, 0), capacity(nDirectedEdges * productFactors, 0);
-		std::vector<double> newResidual(nDirectedEdges * productFactors, 0), newFlow(nDirectedEdges * productFactors, 0), newCapacity(nDirectedEdges * productFactors, 0);
-		std::vector<double> maxFlows(productFactors, 0), newMaxFlows(productFactors, 0);
+		std::vector<double> residual((std::size_t)nDirectedEdges, 0), flow((std::size_t)nDirectedEdges, 0), capacity((std::size_t)nDirectedEdges, 0);
+		std::vector<double> newResidual, newFlow, newCapacity;
+		std::vector<double> maxFlows(1, 0), newMaxFlows;
 
 		std::vector<double> tmpResidual(nDirectedEdges), tmpFlow(nDirectedEdges), tmpCapacity(nDirectedEdges);
 
@@ -111,6 +111,11 @@ namespace multistateTurnip
 			for(int timeCounter = 0; timeCounter < (int)args.times.size()-1; timeCounter++)
 			{
 				int outputCounter = 0;
+				newAllRepairTimes.resize((std::size_t)args.splittingFactors[timeCounter]*(std::size_t)currentSamples * totalTimes);
+				newCapacity.resize((std::size_t)args.splittingFactors[timeCounter]*(std::size_t)currentSamples * (std::size_t)nDirectedEdges);
+				newResidual.resize((std::size_t)args.splittingFactors[timeCounter]*(std::size_t)currentSamples * (std::size_t)nDirectedEdges);
+				newFlow.resize((std::size_t)args.splittingFactors[timeCounter]*(std::size_t)currentSamples * (std::size_t)nDirectedEdges);
+				newMaxFlows.resize((std::size_t)args.splittingFactors[timeCounter]*(std::size_t)currentSamples);
 				for(int sampleCounter2 = 0; sampleCounter2 < currentSamples; sampleCounter2++)
 				{
 					if(maxFlows[sampleCounter2] < args.level)
