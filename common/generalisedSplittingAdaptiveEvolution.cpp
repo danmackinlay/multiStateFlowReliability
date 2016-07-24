@@ -178,17 +178,17 @@ namespace multistateTurnip
 				return;
 			}
 			args.times.push_back(threshold);
-			std::fill(capacityThreshold.begin(), capacityThreshold.end(), 0);
 			for(int sampleCounter = 0; sampleCounter < args.n/args.fraction; sampleCounter++)
 			{
 				int index = networkFailureTimes[sampleCounter].index;
+				std::copy(maximumCapacities.begin(), maximumCapacities.end(), capacityThreshold.begin() + index * nDirectedEdges);
 				for(int i = 0; i < totalTimes; i++)
 				{
 					edgeFailureData& currentFailure = allFailureTimes[index*totalTimes + i];
 					const std::vector<std::pair<double, double> >& cumulativeData = context.getDistribution(currentFailure.edge).getCumulativeData();
-					if(currentFailure.time < threshold)
+					if(currentFailure.time <= threshold)
 					{
-						capacityThreshold[index*nDirectedEdges + 2*currentFailure.edge] = capacityThreshold[index*nDirectedEdges + 2*currentFailure.edge + 1] = std::max(capacityThreshold[index*nDirectedEdges + 2*currentFailure.edge], cumulativeData[currentFailure.level].first);
+						capacityThreshold[index*nDirectedEdges + 2*currentFailure.edge] = capacityThreshold[index*nDirectedEdges + 2*currentFailure.edge + 1] = std::min(capacityThreshold[index*nDirectedEdges + 2*currentFailure.edge], cumulativeData[currentFailure.level].first);
 					}
 				}
 			}
@@ -222,12 +222,11 @@ namespace multistateTurnip
 						{
 							bool unconditional = false;
 							int indexThisFailureTime = newUnsortedAllFailureTimes[outputCounter*totalTimes + startingOffset + repairTimeCounter];
-							edgeFailureData& relevantFailure = newAllFailureTimes[outputCounter * totalTimes + indexThisFailureTime];
 							double increaseTo = currentEdgeCumulativeData.back().first;
 							for(int otherRepairTimeCounter = 0; otherRepairTimeCounter < nTimes[edgeCounter]; otherRepairTimeCounter++)
 							{
 								int indexOtherFailureTime = newUnsortedAllFailureTimes[outputCounter*totalTimes + startingOffset + otherRepairTimeCounter];
-								if(newAllFailureTimes[outputCounter * totalTimes + indexOtherFailureTime].time < threshold && otherRepairTimeCounter != repairTimeCounter)
+								if(newAllFailureTimes[outputCounter * totalTimes + indexOtherFailureTime].time <= threshold && otherRepairTimeCounter != repairTimeCounter)
 								{
 									increaseTo = currentEdgeCumulativeData[otherRepairTimeCounter].first; break;
 								}
@@ -239,8 +238,8 @@ namespace multistateTurnip
 								std::copy(newCapacityThreshold.begin() + outputCounter*nDirectedEdges, newCapacityThreshold.begin() + (outputCounter+1)*nDirectedEdges, tmpResidual.begin());
 								std::fill(tmpFlow.begin(), tmpFlow.end(), 0);
 								tmpCapacity[2*edgeCounter] = tmpCapacity[2*edgeCounter + 1] = increaseTo;
-								tmpResidual[2*edgeCounter] = increaseTo - tmpFlow[2*edgeCounter];
-								tmpResidual[2*edgeCounter + 1] = increaseTo - tmpFlow[2*edgeCounter + 1];
+								tmpResidual[2*edgeCounter] = increaseTo;
+								tmpResidual[2*edgeCounter + 1] = increaseTo;
 								double newMaxFlow = 0;
 								edmondsKarpMaxFlow(&(tmpCapacity[0]), &(tmpFlow[0]), &(tmpResidual[0]), directedGraph, source, sink, std::numeric_limits<double>::infinity(), scratch, newMaxFlow);
 								if(newMaxFlow < args.level) unconditional = true;
@@ -275,6 +274,10 @@ namespace multistateTurnip
 								*destination = copiedFailure;
 								source++;
 							}
+							else
+							{
+								*destination = copiedFailure;
+							}
 							//update unsortedAllFailureTimes
 							for(std::vector<edgeFailureData>::iterator k = std::min(source, destination); k != std::max(source, destination); k++)
 							{
@@ -291,7 +294,7 @@ namespace multistateTurnip
 									newCapacityAfterResampling = currentEdgeCumulativeData[k].first;
 									minimumFound = true;
 								}
-								if(newAllFailureTimes[outputCounter*totalTimes + kk].time < threshold &&!minimumFoundThreshold)
+								if(newAllFailureTimes[outputCounter*totalTimes + kk].time <= threshold &&!minimumFoundThreshold)
 								{
 									newCapacityAfterResamplingThreshold = currentEdgeCumulativeData[k].first;
 									minimumFoundThreshold = true;
@@ -327,6 +330,7 @@ namespace multistateTurnip
 							}
 							else
 							{
+								if(currentFailureIterator == newAllFailureTimes.begin() + (outputCounter + 1) * totalTimes) currentFailureIterator--;
 								//Iterate backwards in time. This means that once we have maxflow bigger than args.level, we need to step forwards one step again. 
 								while(true)
 								{
@@ -356,7 +360,7 @@ namespace multistateTurnip
 									
 									if(newMaxFlows[outputCounter] >= args.level)
 									{
-										updateArgs.newCapacity = cumulativeData[currentFailureIterator->level].first;
+										updateArgs.newCapacity = std::min(cumulativeData[currentFailureIterator->level].first, updateArgs.newCapacity);
 										previousMaxFlow = newMaxFlows[outputCounter];
 										updateFlowIncremental(updateArgs, previousMaxFlow, newMaxFlows[outputCounter]);
 										currentNetworkFailure.time = currentFailureIterator->time;

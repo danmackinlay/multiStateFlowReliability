@@ -14,7 +14,7 @@ secondsPerRun <- lapply(allResults, function(x) unlist(lapply(x, function(y) dif
 averageSecondsPerRun <- unlist(lapply(secondsPerRun, function(x) if(is.null(x)) NA else mean(x)))
 secondsSingleSample <- unlist(lapply(allResults, function(x)
 	{
-		if(is.null(x) || class(x[[1]]) == "generalisedSplittingResult") 
+		if(is.null(x) || length(x) == 0 || class(x[[1]]) == "generalisedSplittingResult") 
 		{
 			return(NA)
 		}
@@ -26,7 +26,7 @@ secondsSingleSample <- unlist(lapply(allResults, function(x)
 
 averageEstimatesFunc <- function(x)
 {
-	if(is.null(x))
+	if(is.null(x) || length(x) == 0)
 	{
 		return(NA)
 	}
@@ -47,7 +47,7 @@ averageEstimates <- do.call(c, lapply(allResults, averageEstimatesFunc))
 
 varianceSingleSampleFunc <- function(x)
 {
-	if(is.null(x))
+	if(is.null(x) || length(x) == 0)
 	{
 		return(NA)
 	}
@@ -73,7 +73,7 @@ workNormalizedSingleSampleVariance <- as.numeric(varianceSingleSample * secondsS
 
 varianceFunc <- function(x)
 {
-	if(is.null(x))
+	if(is.null(x) || length(x) == 0)
 	{
 		return(NA)
 	}

@@ -130,7 +130,7 @@ namespace multistateTurnip
 						{
 							Context::internalDirectedGraph::edge_iterator edgeIterator, endEdgeIterator;
 							boost::tie(edgeIterator, endEdgeIterator) = boost::edges(directedGraph);
-							for(; edgeIterator != endEdgeIterator; edgeIterator++,edgeIterator++)
+							for(; edgeIterator != endEdgeIterator;)
 							{
 								int edgeCounter = boost::get(boost::edge_index, directedGraph, *edgeIterator)/2;
 								std::vector<double>& currentEdgeRates = originalRates[edgeCounter];
@@ -139,32 +139,22 @@ namespace multistateTurnip
 								for(int repairTimeCounter = 0; repairTimeCounter < nTimes[edgeCounter]; repairTimeCounter++)
 								{
 									bool unconditional = false;
-									if(newAllRepairTimes[outputCounter*totalTimes + edgeStartingOffset[edgeCounter] + repairTimeCounter] >= args.times[timeCounter]) unconditional = true;
-									else
+									//The new capacity of this edge if the repair time of the current anti-shock is bigger than args.times[timeCounter+1]
+									double increaseTo = currentEdgeCumulativeData.back().first;
+									for(int otherRepairTimeCounter = 0; otherRepairTimeCounter < nTimes[edgeCounter]; otherRepairTimeCounter++)
 									{
-										for(int otherRepairTimeCounter = 0; otherRepairTimeCounter < repairTimeCounter; otherRepairTimeCounter++)
+										if(newAllRepairTimes[outputCounter * totalTimes + edgeStartingOffset[edgeCounter] + otherRepairTimeCounter] < args.times[timeCounter] && otherRepairTimeCounter != repairTimeCounter)
 										{
-											if(newAllRepairTimes[outputCounter*totalTimes + edgeStartingOffset[edgeCounter] + otherRepairTimeCounter] < newAllRepairTimes[outputCounter*totalTimes + edgeStartingOffset[edgeCounter] + repairTimeCounter])
-											{
-												unconditional = true; break;
-											}
+											increaseTo = currentEdgeCumulativeData[otherRepairTimeCounter].first; break;
 										}
 									}
-									//At this point we still have no reason to think that this part of the gibbs step should involve simulation from the unconditional distribution. We know that our resampling of this repair time might increase the time at which the max flow reaches the threshold, but does it increase by enough to make a difference?
-									if(!unconditional)
+									if(increaseTo <= newCapacity[outputCounter*nDirectedEdges + 2*edgeCounter]) unconditional = true;
+									else
 									{
 										std::copy(newCapacity.begin() + outputCounter*nDirectedEdges, newCapacity.begin() + (outputCounter+1)*nDirectedEdges, tmpCapacity.begin());
 										std::copy(newResidual.begin() + outputCounter*nDirectedEdges, newResidual.begin() + (outputCounter+1)*nDirectedEdges, tmpResidual.begin());
 										std::copy(newFlow.begin() + outputCounter*nDirectedEdges, newFlow.begin() + (outputCounter+1)*nDirectedEdges, tmpFlow.begin());
-										//The new capacity of this edge if the repair time of the current anti-shock is bigger than args.times[timeCounter+1]
-										double increaseTo = currentEdgeCumulativeData.back().first;
-										for(int otherRepairTimeCounter = repairTimeCounter + 1; otherRepairTimeCounter < nTimes[edgeCounter]; otherRepairTimeCounter++)
-										{
-											if(newAllRepairTimes[outputCounter * totalTimes + edgeStartingOffset[edgeCounter] + otherRepairTimeCounter] <= args.times[timeCounter])
-											{
-												increaseTo = currentEdgeCumulativeData[otherRepairTimeCounter].first; break;
-											}
-										}
+
 										tmpCapacity[2*edgeCounter] = tmpCapacity[2*edgeCounter + 1] = increaseTo;
 										tmpResidual[2*edgeCounter] = increaseTo - tmpFlow[2*edgeCounter];
 										tmpResidual[2*edgeCounter + 1] = increaseTo - tmpFlow[2*edgeCounter + 1];
@@ -198,11 +188,9 @@ namespace multistateTurnip
 									updateArgs.newCapacity = newCapacityThisEdge;
 									double previousMaxFlow = newMaxFlows[outputCounter];
 									updateFlowIncremental(updateArgs, previousMaxFlow, newMaxFlows[outputCounter]);
-									if(newMaxFlows[outputCounter] < 0)
-									{
-										throw std::runtime_error("Internal error");
-									}
 								}
+								edgeIterator++;
+								edgeIterator++;
 							}
 							outputCounter++;
 							if(sampleCounter3 != args.splittingFactors[timeCounter] - 1)

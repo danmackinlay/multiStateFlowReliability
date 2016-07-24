@@ -176,6 +176,8 @@ if(method == "crudeMC")
 		results <- list()
 		pilot <- generalisedSplittingAdaptiveEvolution(graph = graph, capacityMatrix = capacityList, n = n, seed = SCENARIO_INDEX + counter * 100000 - 1, interestVertices = interestVertices, verbose=FALSE, fraction = 10, level = demand)
 		factors <- rep(10, length(pilot@times)-1)
+		save(pilot, factors, results, file = tmpFile)
+		file.rename(from = tmpFile, to = outputFile)
 	}
 	while(counter < nReps + 1)
 	{
