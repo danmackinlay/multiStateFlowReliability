@@ -18,6 +18,7 @@ for(i in 1:nrow(scenarios))
 			submit <- TRUE
 		}
 		else submit <- FALSE
+		cat(i, ", ", length(results), " / 100 \n")
 	}
 	if(submit)
 	{

@@ -91,6 +91,21 @@ namespace multistateTurnip
 		conditionalCumulativeData.swap(other.conditionalCumulativeData);
 		return *this;
 	}
+	capacityDistribution capacityDistribution::makeCopy() const
+	{
+		capacityDistribution result;
+		result.data = data;
+		result.cumulativeData = cumulativeData;
+		result.conditionalCumulativeData = conditionalCumulativeData;
+		return result;
+	}
+	capacityDistribution& capacityDistribution::operator=(const capacityDistribution& other)
+	{
+		data = other.data;
+		cumulativeData = other.cumulativeData;
+		conditionalCumulativeData = other.conditionalCumulativeData;
+		return *this;
+	}
 	capacityDistribution::capacityDistribution(capacityDistribution&& other)
 	{
 		data.swap(other.data);
