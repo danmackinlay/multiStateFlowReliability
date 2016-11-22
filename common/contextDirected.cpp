@@ -159,8 +159,7 @@ namespace multistateTurnip
 		{
 			//This has all the reverse edges too. 
 			int source = boost::source(*start, *inputDirectedGraph), target = boost::target(*start, *inputDirectedGraph);
-			std::pair<internalGraph::edge_descriptor, bool> tmp;
-			tmp = boost::edge(source, target, *inputDirectedGraph);
+			std::pair<internalGraph::edge_descriptor, bool> tmp = boost::edge(source, target, *internalDirectedGraph);
 			//Doing it this way because I'm not sure if add_edge overwrites the edge_index in the case that the edge already exists. 
 			internalGraph::edge_descriptor firstEdge;
 			int inputEdgeIndex = boost::get(boost::edge_index, *inputDirectedGraph, *start);
@@ -174,11 +173,11 @@ namespace multistateTurnip
 			else 
 			{
 				firstEdge = tmp.first;
-				distributions[boost::get(boost::edge_index, *internalDirectedGraph, *start)] = inputDistributions[inputEdgeIndex].makeCopy();
+				distributions[boost::get(boost::edge_index, *internalDirectedGraph, firstEdge)] = inputDistributions[inputEdgeIndex].makeCopy();
 			}
 
 			internalGraph::edge_descriptor secondEdge;
-			tmp = boost::edge(target, source, *inputDirectedGraph);
+			tmp = boost::edge(target, source, *internalDirectedGraph);
 			if(!tmp.second)
 			{
 				secondEdge = boost::add_edge(target, source, index, *internalDirectedGraph).first;

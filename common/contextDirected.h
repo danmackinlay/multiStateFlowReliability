@@ -15,8 +15,8 @@ namespace multistateTurnip
 	public:
 		friend class boost::serialization::access;
 		typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, boost::no_property, boost::property<boost::edge_index_t, int> > inputGraph;
-		typedef boost::adjacency_list_traits<boost::vecS, boost::vecS, boost::directedS> directedGraphTraits;
-		typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, boost::no_property, boost::property<boost::edge_index_t, int, boost::property<boost::edge_reverse_t, directedGraphTraits::edge_descriptor> > > internalGraph;
+		typedef boost::adjacency_list_traits<boost::vecS, boost::vecS, boost::bidirectionalS> directedGraphTraits;
+		typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, boost::no_property, boost::property<boost::edge_index_t, int, boost::property<boost::edge_reverse_t, directedGraphTraits::edge_descriptor> > > internalGraph;
 
 		ContextDirected(boost::shared_ptr<const inputGraph> graph, int source, int sink, const std::vector<capacityDistribution>& distributions, const mpfr_class& threshold);
 
@@ -50,15 +50,6 @@ namespace multistateTurnip
 		mutable std::vector<internalGraph::edge_descriptor> vertexPredecessorVector;
 		mutable std::vector<boost::default_color_type> colorVector;
 		mutable std::vector<int> distanceVector;
-	};
-}
-namespace boost
-{
-	//Fix screw ups in boykov_kolmogorov_max_flow (Note that it doesn't take the edge_capacity_t from the named parameters, only from the graph).
-	//May be fixed by boost at some point, in which case delete this. 
-	template<> struct property_map<const multistateTurnip::ContextDirected::internalGraph, edge_capacity_t>
-	{
-		typedef networkReliabilityImpl::customStruct const_type;
 	};
 }
 #endif
