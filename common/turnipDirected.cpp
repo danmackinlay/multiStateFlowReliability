@@ -4,7 +4,6 @@
 #include <boost/range/algorithm/random_shuffle.hpp>
 #include <algorithm>
 #include <boost/random/exponential_distribution.hpp>
-#include "allPointsMaxFlow.hpp"
 #include "edmondsKarp.hpp"
 namespace multistateTurnip
 {
@@ -16,8 +15,6 @@ namespace multistateTurnip
 		int source = context.getSource();
 		int sink = context.getSink();
 
-		//These are only needed for the allPointsMaxFlow call. 
-		allPointsMaxFlow::allPointsMaxFlowScratch<ContextDirected::internalGraph> scratch;
 		//Working data for the edmonds karp call(s)
 		edmondsKarpMaxFlowScratch<ContextDirected::internalGraph, double> edmondsKarpScratch;
 
@@ -116,42 +113,45 @@ namespace multistateTurnip
 				std::vector<mpfr_class>& currentEdgeRatesExact = originalRatesExact[k];
 				const capacityDistribution& currentEdgeDistribution = args.context.getDistribution(k);
 				std::size_t nLevels = currentEdgeDistribution.getData().size();
-				perEdgeRepairTimes.resize(nLevels-1);
-				for(int j = 0; j < (int)nLevels - 1; j++)
+				if(nLevels > 1)
 				{
-					boost::exponential_distribution<> repairDist(currentEdgeRates[j]);
-					perEdgeRepairTimes[j] = repairDist(args.randomSource);
-				}
-				//The increase to highest capacity definitely occurs at some point
-				edgeRepairData highest;
-				highest.time = perEdgeRepairTimes[0];
-				highest.rate = currentEdgeRatesExact[0];
-				highest.level = 0;
-				highest.edge = k;
-				repairTimes.push_back(highest);
+					perEdgeRepairTimes.resize(nLevels-1);
+					for(int j = 0; j < (int)nLevels - 1; j++)
+					{
+						boost::exponential_distribution<> repairDist(currentEdgeRates[j]);
+						perEdgeRepairTimes[j] = repairDist(args.randomSource);
+					}
+					//The increase to highest capacity definitely occurs at some point
+					edgeRepairData highest;
+					highest.time = perEdgeRepairTimes[0];
+					highest.rate = currentEdgeRatesExact[0];
+					highest.level = 0;
+					highest.edge = k;
+					repairTimes.push_back(highest);
 
-				//We can store pointers because there is no reallocation of this vector, due to reserve call
-				edgeRepairData* minRepairTime = &*repairTimes.rbegin();
-				for(int j = 1; j < (int)nLevels - 1; j++)
-				{
-					if(perEdgeRepairTimes[j] > minRepairTime->time)
+					//We can store pointers because there is no reallocation of this vector, due to reserve call
+					edgeRepairData* minRepairTime = &*repairTimes.rbegin();
+					for(int j = 1; j < (int)nLevels - 1; j++)
 					{
-						minRepairTime->rate += currentEdgeRatesExact[j];
+						if(perEdgeRepairTimes[j] > minRepairTime->time)
+						{
+							minRepairTime->rate += currentEdgeRatesExact[j];
+						}
+						else
+						{
+							ratesForEdges[k][minRepairTime->level] = minRepairTime->rate;
+							edgeRepairData time;
+							time.time = perEdgeRepairTimes[j];
+							time.level = j;
+							time.edge = k;
+							time.rate = currentEdgeRatesExact[j];
+							repairTimes.push_back(time);
+							minRepairTime = &*repairTimes.rbegin();
+						}
 					}
-					else
-					{
-						ratesForEdges[k][minRepairTime->level] = minRepairTime->rate;
-						edgeRepairData time;
-						time.time = perEdgeRepairTimes[j];
-						time.level = j;
-						time.edge = k;
-						time.rate = currentEdgeRatesExact[j];
-						repairTimes.push_back(time);
-						minRepairTime = &*repairTimes.rbegin();
-					}
+					ratesForEdges[k][minRepairTime->level] = minRepairTime->rate;
+					std::fill(alreadySeen[k].begin(), alreadySeen[k].end(), false);
 				}
-				ratesForEdges[k][minRepairTime->level] = minRepairTime->rate;
-				std::fill(alreadySeen[k].begin(), alreadySeen[k].end(), false);
 			}
 			std::sort(repairTimes.begin(), repairTimes.end(), timeSorter);
 			//No edges have yet been seen
@@ -168,8 +168,6 @@ namespace multistateTurnip
 			std::copy(minimumCapacities.begin(), minimumCapacities.end(), residualVector.begin());
 			std::fill(flowVector.begin(), flowVector.end(), 0);
 			double currentFlow = 0;
-			//Counter used to make sure we only call the all-points max flow once for every fixed number of steps
-			int allPointsMaxFlowCounter = 1;
 			while(insufficientFlow && repairTimeIterator != repairTimes.end())
 			{
 				//get out the parallel edge index
@@ -196,54 +194,24 @@ namespace multistateTurnip
 					alreadySeen[edge][level] = true;
 					//If we now have newThreshold or higher flow between the the vertices for the edge,
 					//we can discard ALL not yet added edges between those two vertices
-					if (args.useAllPointsMaxFlow)
+					ContextDirected::internalGraph::vertex_descriptor firstVertex = verticesPerEdge[edge].first;
+					ContextDirected::internalGraph::vertex_descriptor secondVertex = verticesPerEdge[edge].second;
+					//We want to start this computation from the beginning (rather than the incremental version). So the flows start as zero
+					std::fill(flowVectorIncreasedEdge.begin(), flowVectorIncreasedEdge.end(), 0);
+					std::copy(capacityVector.begin(), capacityVector.end(), residualVectorIncreasedEdge.begin());
+					double flowIncreasedEdge = 0;
+					edmondsKarpMaxFlow<ContextDirected::internalGraph, double>(&capacityVector.front(), &flowVectorIncreasedEdge.front(), &residualVectorIncreasedEdge.front(), graph, firstVertex, secondVertex, args.threshold, edmondsKarpScratch, flowIncreasedEdge);
+					if(flowIncreasedEdge >= args.threshold)
 					{
-						if ((allPointsMaxFlowCounter++ % args.allPointsMaxFlowIncrement) == 0)
-						{
-							allPointsMaxFlow::allPointsMaxFlow<ContextDirected::internalGraph, double>(flowMatrix, capacityVector, graph, scratch);
-							ContextDirected::internalGraph::edge_iterator current, end;
-							boost::tie(current, end) = boost::edges(graph);
-							for (; current != end; current++)
-							{
-								ContextDirected::internalGraph::vertex_descriptor source = boost::source(*current, graph), target = boost::target(*current, graph);
-								if (flowMatrix[source + nVertices * target] >= args.threshold)
-								{
-									int edgeToIgnore = boost::get(boost::edge_index, graph, *current);
-									const capacityDistribution& edgeToIgnoreDistribution = args.context.getDistribution(edgeToIgnore);
-									int edgeToIgnoreLevels = edgeToIgnoreDistribution.getData().size();
-									for(int counter = 0; counter < edgeToIgnoreLevels; counter++)
-									{
-										if (!alreadySeen[edgeToIgnore][counter])
-										{
-											currentRate -= ratesForEdges[edgeToIgnore][counter];
-											alreadySeen[edgeToIgnore][counter] = true;
-										}
-									}
-								}
-							}
-						}
-					}
-					else 
-					{
-						ContextDirected::internalGraph::vertex_descriptor firstVertex = verticesPerEdge[edge].first;
-						ContextDirected::internalGraph::vertex_descriptor secondVertex = verticesPerEdge[edge].second;
-						//We want to start this computation from the beginning (rather than the incremental version). So the flows start as zero
-						std::fill(flowVectorIncreasedEdge.begin(), flowVectorIncreasedEdge.end(), 0);
-						std::copy(capacityVector.begin(), capacityVector.end(), residualVectorIncreasedEdge.begin());
-						double flowIncreasedEdge = 0;
-						edmondsKarpMaxFlow<ContextDirected::internalGraph, double>(&capacityVector.front(), &flowVectorIncreasedEdge.front(), &residualVectorIncreasedEdge.front(), graph, firstVertex, secondVertex, args.threshold, edmondsKarpScratch, flowIncreasedEdge);
-						if(flowIncreasedEdge >= args.threshold)
-						{
-							const capacityDistribution& edgeToIgnoreDistribution = args.context.getDistribution(edge);
-							int edgeToIgnoreLevels = edgeToIgnoreDistribution.getData().size();
+						const capacityDistribution& edgeToIgnoreDistribution = args.context.getDistribution(edge);
+						int edgeToIgnoreLevels = edgeToIgnoreDistribution.getData().size();
 
-							for(int counter = 0; counter < edgeToIgnoreLevels; counter++)
+						for(int counter = 0; counter < edgeToIgnoreLevels; counter++)
+						{
+							if(!alreadySeen[edge][counter])
 							{
-								if(!alreadySeen[edge][counter])
-								{
-									currentRate -= ratesForEdges[edge][counter];
-									alreadySeen[edge][counter] = true;
-								}
+								currentRate -= ratesForEdges[edge][counter];
+								alreadySeen[edge][counter] = true;
 							}
 						}
 					}

@@ -7,13 +7,9 @@
 extern "C" const char* package_name = "multiStateFlowReliability";
 #include "RPackage/crudeMC.h"
 #include "RPackage/PMC.h"
+#include "RPackage/turnip.h"
 namespace multistateTurnip
 {
-
-	SEXP turnip_graphNEL(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp);
-	SEXP turnip_igraph(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp);
-	SEXP turnip_graphAM(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP useAllPointsMaxFlow_sexp, SEXP allPointsMaxFlowIncrement_sexp);
-
 	SEXP generalisedSplittingFixedEffort_igraph(SEXP graph, SEXP distributions, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp);
 	SEXP generalisedSplittingFixedEffort_graphNEL(SEXP graph, SEXP distributions, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp);
 	SEXP generalisedSplittingFixedEffort_graphAM(SEXP graph, SEXP distributions, SEXP n, SEXP levels_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp);
@@ -36,9 +32,9 @@ R_CallMethodDef callMethods[] =
 	{"pmc_igraph", (DL_FUNC)&multistateTurnip::pmc_igraph, 8},
 	{"pmc_graphNEL", (DL_FUNC)&multistateTurnip::pmc_graphNEL, 8},
 	{"pmc_graphAM", (DL_FUNC)&multistateTurnip::pmc_graphAM, 8},
-	{"turnip_igraph", (DL_FUNC)&multistateTurnip::turnip_igraph, 8},
-	{"turnip_graphNEL", (DL_FUNC)&multistateTurnip::turnip_graphNEL, 8},
-	{"turnip_graphAM", (DL_FUNC)&multistateTurnip::turnip_graphAM, 8},
+	{"turnip_igraph", (DL_FUNC)&multistateTurnip::turnip_igraph, 9},
+	{"turnip_graphNEL", (DL_FUNC)&multistateTurnip::turnip_graphNEL, 9},
+	{"turnip_graphAM", (DL_FUNC)&multistateTurnip::turnip_graphAM, 9},
 	{"generalisedSplittingFixedEffort_igraph", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedEffort_igraph, 7},
 	{"generalisedSplittingFixedEffort_graphNEL", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedEffort_graphNEL, 7},
 	{"generalisedSplittingFixedEffort_graphAM", (DL_FUNC)&multistateTurnip::generalisedSplittingFixedEffort_graphAM, 7},

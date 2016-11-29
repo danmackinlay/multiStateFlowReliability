@@ -18,8 +18,6 @@ namespace multistateTurnip
 		double threshold;
 		std::function<void(std::string&)> outputFunc;
 		boost::mt19937 randomSource;
-		bool useAllPointsMaxFlow;
-		int allPointsMaxFlowIncrement;
 		mpfr_class firstMomentSingleSample, secondMomentSingleSample, varianceSingleSample, sqrtVarianceOfEstimate, relativeErrorEstimate;
 	};
 	void turnipDirected(turnipDirectedArgs& args);
