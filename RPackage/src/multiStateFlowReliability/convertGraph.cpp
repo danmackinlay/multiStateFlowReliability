@@ -19,5 +19,24 @@ namespace multistateTurnip
 		{
 			throw std::runtime_error("Internal error");
 		}
+	}	
+	void convertGraphDirected(SEXP graph_sexp, ContextDirected::inputGraph& graphRef, R_GRAPH_TYPE graphType)
+	{
+		if(graphType == IGRAPH)
+		{
+			convertGraphDirectedIGraph(graph_sexp, graphRef);
+		}
+		else if(graphType == GRAPHAM)
+		{
+			convertGraphDirectedAM(graph_sexp, graphRef);	
+		}
+		else if(graphType == GRAPHNEL)
+		{
+			convertGraphDirectedNEL(graph_sexp, graphRef);
+		}
+		else
+		{
+			throw std::runtime_error("Internal error");
+		}
 	}
 }

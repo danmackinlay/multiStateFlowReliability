@@ -3,3 +3,7 @@
 /slurm-*
 /multiStateFlowReliability.po*
 /multiStateFlowReliability.o*
+/summarised.RData
+/tables.aux
+/tables.log
+/tables.pdf

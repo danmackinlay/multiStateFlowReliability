@@ -5,12 +5,9 @@
 	#define RcppExport extern "C" __declspec(dllexport)
 #endif
 extern "C" const char* package_name = "multiStateFlowReliability";
+#include "RPackage/crudeMC.h"
 namespace multistateTurnip
 {
-	SEXP crudeMC_graphNEL(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices);
-	SEXP crudeMC_igraph(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices);
-	SEXP crudeMC_graphAM(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices);
-	
 	SEXP pmc_graphNEL(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP verbose);
 	SEXP pmc_igraph(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP verbose);
 	SEXP pmc_graphAM(SEXP graph, SEXP distributions, SEXP n, SEXP threshold, SEXP seed, SEXP interestVertices, SEXP verbose);
@@ -35,9 +32,9 @@ namespace multistateTurnip
 }
 R_CallMethodDef callMethods[] = 
 {
-	{"crudeMC_igraph", (DL_FUNC)&multistateTurnip::crudeMC_igraph, 6},
-	{"crudeMC_graphNEL", (DL_FUNC)&multistateTurnip::crudeMC_graphNEL, 6},
-	{"crudeMC_graphAM", (DL_FUNC)&multistateTurnip::crudeMC_graphAM, 6},
+	{"crudeMC_igraph", (DL_FUNC)&multistateTurnip::crudeMC_igraph, 7},
+	{"crudeMC_graphNEL", (DL_FUNC)&multistateTurnip::crudeMC_graphNEL, 7},
+	{"crudeMC_graphAM", (DL_FUNC)&multistateTurnip::crudeMC_graphAM, 7},
 	{"pmc_igraph", (DL_FUNC)&multistateTurnip::pmc_igraph, 7},
 	{"pmc_graphNEL", (DL_FUNC)&multistateTurnip::pmc_graphNEL, 7},
 	{"pmc_graphAM", (DL_FUNC)&multistateTurnip::pmc_graphAM, 7},

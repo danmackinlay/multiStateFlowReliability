@@ -7,5 +7,6 @@
 namespace multistateTurnip
 {
 	Context createContext(SEXP graph, std::vector<capacityDistribution>& distributions, int vertex1, int vertex2, mpfr_class threshold, R_GRAPH_TYPE graphType);
+	ContextDirected createContextDirected(SEXP graph, std::vector<capacityDistribution>& distributions, int vertex1, int vertex2, mpfr_class threshold, R_GRAPH_TYPE graphType);
 }
 #endif

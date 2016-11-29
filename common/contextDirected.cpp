@@ -116,7 +116,7 @@ namespace multistateTurnip
 		}
 		{
 			std::size_t nEdges = boost::num_edges(*inputDirectedGraph);
-			if(this->distributions.size() != nEdges)
+			if(inputDistributions.size() != nEdges)
 			{
 				throw std::runtime_error("Input distributions must have an entry for every edge");
 			}
@@ -198,6 +198,10 @@ namespace multistateTurnip
 		distanceVector.resize(nEdgesWithReverse);
 
 		this->graph = internalDirectedGraph;
+		if(distributions.size() != boost::num_edges(*internalDirectedGraph.get()))
+		{
+				throw std::runtime_error("Internal error");
+		}
 	}
 	ContextDirected::ContextDirected()
 		:graph(NULL)

@@ -1,17 +1,13 @@
-crudeMC <- function(graph, capacityMatrix, n, threshold, seed, interestVertices)
+crudeMC <- function(graph, capacityMatrix, n, threshold, seed, interestVertices, undirected)
 {
 	if(class(graph) == "igraph")
 	{
-		if(igraph::is.directed(graph))
-		{
-			stop("Input `graph' must be undirected")
-		}
 		if(!is.list(capacityMatrix))
 		{
 			capacityMatrix <- replicate(vcount(graph), capacityMatrix, simplify=FALSE)
 		}
 		start <- Sys.time()
-		result <- .Call("crudeMC_igraph", graph, capacityMatrix, n, threshold, seed, interestVertices, PACKAGE="multiStateFlowReliability")
+		result <- .Call("crudeMC_igraph", graph, capacityMatrix, n, threshold, seed, interestVertices, undirected, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()
 	}
 	else if(class(graph) == "graphNEL")
@@ -21,7 +17,7 @@ crudeMC <- function(graph, capacityMatrix, n, threshold, seed, interestVertices)
 			capacityMatrix <- replicate(length(nodes(graph)), capacityMatrix, simplify=FALSE)
 		}
 		start <- Sys.time()
-		result <- .Call("crudeMC_graphNEL", graph, capacityMatrix, n, threshold, seed, interestVertices, PACKAGE="multiStateFlowReliability")
+		result <- .Call("crudeMC_graphNEL", graph, capacityMatrix, n, threshold, seed, interestVertices, undirected, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()
 	}
 	else if(class(graph) == "graphAM")
@@ -31,12 +27,12 @@ crudeMC <- function(graph, capacityMatrix, n, threshold, seed, interestVertices)
 			capacityMatrix <- replicate(length(nodes(graph)), capacityMatrix, simplify=FALSE)
 		}
 		start <- Sys.time()
-		result <- .Call("crudeMC_graphAM", graph, capacityMatrix, n, threshold, seed, interestVertices, PACKAGE="multiStateFlowReliability")
+		result <- .Call("crudeMC_graphAM", graph, capacityMatrix, n, threshold, seed, interestVertices, undirected, PACKAGE="multiStateFlowReliability")
 		end <- Sys.time()
 	}
 	else
 	{
 		stop("Input graph must have class \"igraph\", \"graphAM\" or \"graphNEL\"")
 	}
-	return(new("crudeMCResult", data = mpfr(result), call = match.call(), start = start, end = end, n = as.integer(n), capacity = capacityMatrix, threshold = threshold, interestVertices = as.integer(interestVertices), seed = as.integer(seed)))
+	return(new("crudeMCResult", data = mpfr(result), call = match.call(), start = start, end = end, n = as.integer(n), capacity = capacityMatrix, threshold = threshold, interestVertices = as.integer(interestVertices), seed = as.integer(seed), undirected = undirected))
 }

@@ -1,4 +1,5 @@
 #include "createContext.h"
+#include "convertGraph.h"
 namespace multistateTurnip
 {
 	Context createContext(SEXP graph_sexp, std::vector<capacityDistribution>& distributions, int vertex1, int vertex2, mpfr_class threshold, R_GRAPH_TYPE type)
@@ -14,4 +15,16 @@ namespace multistateTurnip
 
 		return Context(graph, vertex1, vertex2, std::move(truncatedDistributions), threshold);
 	}
-}
+	ContextDirected createContextDirected(SEXP graph_sexp, std::vector<capacityDistribution>& distributions, int vertex1, int vertex2, mpfr_class threshold, R_GRAPH_TYPE type)
+	{
+		std::vector<capacityDistribution> truncatedDistributions;
+		for(std::vector<capacityDistribution>::iterator i = distributions.begin(); i != distributions.end(); i++)
+		{
+			truncatedDistributions.emplace_back(i->truncateAtMax(threshold));
+		}
+
+		boost::shared_ptr<ContextDirected::inputGraph> graph(new ContextDirected::inputGraph());
+		convertGraphDirected(graph_sexp, *graph, type);
+
+		return ContextDirected(graph, vertex1, vertex2, std::move(truncatedDistributions), threshold);
+	}}
