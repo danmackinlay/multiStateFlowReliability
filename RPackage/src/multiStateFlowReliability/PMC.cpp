@@ -3,9 +3,11 @@
 #include "createCapacityDistributions.h"
 #include "Rcpp.h"
 #include "convertGraph.h"
+#include "PMCDirected.h"
+#include "isUndirected.h"
 namespace multistateTurnip
 {
-	SEXP pmc(SEXP graph, SEXP distribution_sexp, SEXP n_sexp, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, R_GRAPH_TYPE type)
+	SEXP pmc(SEXP graph, SEXP distribution_sexp, SEXP n_sexp, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP undirected_sexp, SEXP verbose_sexp, R_GRAPH_TYPE type)
 	{
 	BEGIN_RCPP
 		double threshold;
@@ -59,6 +61,16 @@ namespace multistateTurnip
 		}
 		if(interestVertices.size() != 2) std::runtime_error("Input interestVertices must be a pair of numbers");
 
+		bool undirected;
+		try
+		{
+			undirected = Rcpp::as<bool>(undirected_sexp);
+		}
+		catch(...)
+		{
+			throw std::runtime_error("Input undirected must be a boolean");
+		}
+
 		Rcpp::RObject barHandle;
 		Rcpp::Function txtProgressBar("txtProgressBar"), setTxtProgressBar("setTxtProgressBar"), close("close");
 		std::function<void(unsigned long, unsigned long)> progressFunction = [](unsigned long, unsigned long){};
@@ -75,37 +87,68 @@ namespace multistateTurnip
 			};
 		}
 
-		std::vector<capacityDistribution> distribution = createCapacityDistributions(distribution_sexp);
-		Context context = createContext(graph, distribution, interestVertices[0]-1, interestVertices[1]-1, threshold, type);
+		std::string firstMomentSingleSampleStr, secondMomentSingleSampleStr, varianceSingleSampleStr, sqrtVarianceOfEstimateStr, relativeErrorEstimateStr;
+		if(undirected)
+		{
+			if(!isUndirected(graph, type))
+			{
+				throw std::runtime_error("It was specified that the undirected model be used, but the input graph was not undirected");
+			}
+			std::vector<capacityDistribution> distribution = createCapacityDistributions(distribution_sexp);
+			Context context = createContext(graph, distribution, interestVertices[0]-1, interestVertices[1]-1, threshold, type);
 
-		pmcArgs args(context);
-		args.randomSource.seed(seed);
-		args.n = n;
-		args.threshold = threshold;
-		args.outputFunc = [](std::string& output){Rcpp::Rcout << output << std::endl;};
-		args.progressFunction = progressFunction;
-		pmc(args);
+			pmcArgs args(context);
+			args.randomSource.seed(seed);
+			args.n = n;
+			args.threshold = threshold;
+			args.outputFunc = [](std::string& output){Rcpp::Rcout << output << std::endl;};
+			args.progressFunction = progressFunction;
+			pmc(args);
+			
+			firstMomentSingleSampleStr = args.firstMomentSingleSample.str();
+			secondMomentSingleSampleStr = args.secondMomentSingleSample.str();
+			varianceSingleSampleStr = args.varianceSingleSample.str();
+			sqrtVarianceOfEstimateStr = args.sqrtVarianceOfEstimate.str();
+			relativeErrorEstimateStr = args.relativeErrorEstimate.str();
+		}
+		else
+		{
+			std::vector<capacityDistribution> distribution = createCapacityDistributions(distribution_sexp);
+			ContextDirected context = createContextDirected(graph, distribution, interestVertices[0]-1, interestVertices[1]-1, threshold, type);
+
+			pmcDirectedArgs args(context);
+			args.randomSource.seed(seed);
+			args.n = n;
+			args.threshold = threshold;
+			args.outputFunc = [](std::string& output){Rcpp::Rcout << output << std::endl;};
+			args.progressFunction = progressFunction;
+			pmcDirected(args);
+			firstMomentSingleSampleStr = args.firstMomentSingleSample.str();
+			secondMomentSingleSampleStr = args.secondMomentSingleSample.str();
+			varianceSingleSampleStr = args.varianceSingleSample.str();
+			sqrtVarianceOfEstimateStr = args.sqrtVarianceOfEstimate.str();
+			relativeErrorEstimateStr = args.relativeErrorEstimate.str();
+		}
 
 		if(verbose)
 		{
 			close(barHandle);
 		}
 
-		std::string firstMomentSingleSampleStr = args.firstMomentSingleSample.str(), secondMomentSingleSampleStr = args.secondMomentSingleSample.str(), varianceSingleSampleStr = args.varianceSingleSample.str(), sqrtVarianceOfEstimateStr = args.sqrtVarianceOfEstimate.str(), relativeErrorEstimateStr = args.relativeErrorEstimate.str();
 		return Rcpp::List::create(Rcpp::Named("firstMomentSingleSample") = firstMomentSingleSampleStr, Rcpp::Named("secondMomentSingleSample") = secondMomentSingleSampleStr, Rcpp::Named("varianceSingleSample") = varianceSingleSampleStr, Rcpp::Named("sqrtVarianceOfEstimate") = sqrtVarianceOfEstimateStr, Rcpp::Named("relativeErrorEstimate") = relativeErrorEstimateStr);
 	END_RCPP
 	}
-	SEXP pmc_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp)
+	SEXP pmc_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP undirected_sexp, SEXP verbose_sexp)
 	{
-		return pmc(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, verbose_sexp, IGRAPH);
+		return pmc(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, undirected_sexp, verbose_sexp, IGRAPH);
 	}
-	SEXP pmc_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp)
+	SEXP pmc_graphAM(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP undirected_sexp, SEXP verbose_sexp)
 	{
-		return pmc(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, verbose_sexp, GRAPHAM);
+		return pmc(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, undirected_sexp, verbose_sexp, GRAPHAM);
 	}
-	SEXP pmc_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp)
+	SEXP pmc_graphNEL(SEXP graph, SEXP capacity, SEXP n, SEXP threshold_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP undirected_sexp, SEXP verbose_sexp)
 	{
-		return pmc(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, verbose_sexp, GRAPHNEL);
+		return pmc(graph, capacity, n, threshold_sexp, seed_sexp, interestVertices_sexp, undirected_sexp, verbose_sexp, GRAPHNEL);
 	}
 
 }

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 set(CppFiles crudeMC.cpp createCapacityDistributions.cpp createContext.cpp convertGraphNEL.cpp convertGraphAM.cpp convertGraphIGraph.cpp convertGraph.cpp register.cpp PMC.cpp turnip.cpp generalisedSplittingFixedEffort.cpp generalisedSplittingFixedFactors.cpp generalisedSplittingFixedFactorsEvolution.cpp generalisedSplittingAdaptiveEvolution.cpp isUndirected.cpp isUndirectedGraphAM.cpp isUndirectedGraphNEL.cpp isUndirectedIGraph.cpp)
-set(HeaderFiles createCapacityDistributions.h createContext.h convertGraph.h isUndirected.h RPackage/crudeMC.h)
+set(HeaderFiles createCapacityDistributions.h createContext.h convertGraph.h isUndirected.h RPackage/crudeMC.h RPackage/PMC.h)
 add_library(multiStateFlowReliabilityRPackage SHARED ${CppFiles} ${HeaderFiles})
 target_link_libraries(multiStateFlowReliabilityRPackage PUBLIC multiStateCommon Rcpp)
 set_target_properties(multiStateFlowReliabilityRPackage PROPERTIES OUTPUT_NAME "multiStateFlowReliability")

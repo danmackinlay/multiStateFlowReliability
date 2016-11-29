@@ -91,39 +91,42 @@ namespace multistateTurnip
 				std::vector<mpfr_class>& currentEdgeRatesExact = originalRatesExact[k];
 				const capacityDistribution& currentEdgeDistribution = args.context.getDistribution(k);
 				std::size_t nLevels = currentEdgeDistribution.getData().size();
-				perEdgeRepairTimes.resize(nLevels-1);
-				//Simulate the times for all the parallel edges, for a single underlying edge
-				for(int j = 0; j < (int)nLevels - 1; j++)
+				if(nLevels > 1)
 				{
-					boost::exponential_distribution<> repairDist(currentEdgeRates[j]);
-					perEdgeRepairTimes[j] = repairDist(args.randomSource);
-				}
-				//The increase to highest capacity definitely occurs at some point
-				edgeRepairData highest;
-				highest.time = perEdgeRepairTimes[0];
-				highest.rate = currentEdgeRates[0];
-				highest.edge = k;
-				highest.level = 0;
-				repairTimes.push_back(highest);
-
-				//We can store pointers because there is no reallocation of this vector, due to reserve call
-				edgeRepairData* minRepairTime = &repairTimes.back();
-				//Aggregate rates. If a lower capacity edge occurs later, add its rate to the current minimum repair time edge. 
-				for(int j = 1; j < (int)nLevels - 1; j++)
-				{
-					if(perEdgeRepairTimes[j] > minRepairTime->time)
+					perEdgeRepairTimes.resize(nLevels-1);
+					//Simulate the times for all the parallel edges, for a single underlying edge
+					for(int j = 0; j < (int)nLevels - 1; j++)
 					{
-						minRepairTime->rate += currentEdgeRatesExact[j];
+						boost::exponential_distribution<> repairDist(currentEdgeRates[j]);
+						perEdgeRepairTimes[j] = repairDist(args.randomSource);
 					}
-					else
+					//The increase to highest capacity definitely occurs at some point
+					edgeRepairData highest;
+					highest.time = perEdgeRepairTimes[0];
+					highest.rate = currentEdgeRates[0];
+					highest.edge = k;
+					highest.level = 0;
+					repairTimes.push_back(highest);
+
+					//We can store pointers because there is no reallocation of this vector, due to reserve call
+					edgeRepairData* minRepairTime = &repairTimes.back();
+					//Aggregate rates. If a lower capacity edge occurs later, add its rate to the current minimum repair time edge. 
+					for(int j = 1; j < (int)nLevels - 1; j++)
 					{
-						edgeRepairData time;
-						time.time = perEdgeRepairTimes[j];
-						time.level = j;
-						time.rate = currentEdgeRatesExact[j];
-						time.edge = k;
-						repairTimes.push_back(time);
-						minRepairTime = &repairTimes.back();
+						if(perEdgeRepairTimes[j] > minRepairTime->time)
+						{
+							minRepairTime->rate += currentEdgeRatesExact[j];
+						}
+						else
+						{
+							edgeRepairData time;
+							time.time = perEdgeRepairTimes[j];
+							time.level = j;
+							time.rate = currentEdgeRatesExact[j];
+							time.edge = k;
+							repairTimes.push_back(time);
+							minRepairTime = &repairTimes.back();
+						}
 					}
 				}
 			}
