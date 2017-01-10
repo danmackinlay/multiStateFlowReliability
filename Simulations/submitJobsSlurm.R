@@ -8,6 +8,21 @@ for(i in 1:nrow(scenarios))
 	resultFile <- file.path("results", scenarios[i, "file"])
 	if(!file.exists(resultFile))
 	{
+		submit <- TRUE
+	}
+	else
+	{
+		rm(results)
+		load(resultFile)
+		if(length(results) != 100)
+		{
+			submit <- TRUE
+		}
+		else submit <- FALSE
+		cat(i, ", ", length(results), " / 100 \n")
+	}
+	if(submit)
+	{
 		system2(command = "sbatch", args = c(paste0("--export=SCENARIO_INDEX=", i), "submitScriptSlurm.sh"), wait=TRUE)
 		submittedJobs <- submittedJobs + 1
 		if(submittedJobs == maxJobs) break
