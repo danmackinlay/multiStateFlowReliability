@@ -1,6 +1,6 @@
 source("./generateScenarios.R")
 library(Rmpfr)
-allResults <- pilots <- list()
+allResults <- pilots <- vector(mode = "list", length = nrow(scenarios))
 for(i in 1:nrow(scenarios))
 {
 	path <- file.path("results", scenarios[i, "file"])

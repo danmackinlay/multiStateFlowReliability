@@ -48,27 +48,27 @@ if(graph == "dodecahedron5EqualCapacity")
 	edgeMatrix <- igraph::get.edges(graph, igraph::E(graph))
 	secondCapacityEdges <- which(edgeMatrix[,1] %in% c(1, 20) | edgeMatrix[,2] %in% c(1, 20))
 	capacityList[secondCapacityEdges] <- replicate(length(secondCapacityEdges), capacityMatrix2, simplify=FALSE)
-} else if(graph == "grid10x10_1")
+} else if(graph == "grid5x5_1")
 {
-	graph <- igraph::make_lattice(dimvector = c(10,10))
+	graph <- igraph::make_lattice(dimvector = c(5,5))
 	capacityMatrix1 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 8)
 	capacityMatrix2 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 12)
-	capacityList <- replicate(180, capacityMatrix1, simplify=FALSE)
+	capacityList <- replicate(40, capacityMatrix1, simplify=FALSE)
 
 	edgeMatrix <- igraph::get.edges(graph, igraph::E(graph))
-	secondCapacityEdges <- which(edgeMatrix[,1] %in% c(1, 100) | edgeMatrix[,2] %in% c(1, 100))
+	secondCapacityEdges <- which(edgeMatrix[,1] %in% c(1, 25) | edgeMatrix[,2] %in% c(1, 25))
 	capacityList[secondCapacityEdges] <- replicate(length(secondCapacityEdges), capacityMatrix2, simplify=FALSE)
 	maxPossibleFlow <- 24
-} else if(graph == "grid10x10_2")
+} else if(graph == "grid5x5_2")
 {
-	graph <- igraph::make_lattice(dimvector = c(10,10))
+	graph <- igraph::make_lattice(dimvector = c(5,5))
 	graph <- igraph::add_vertices(graph, 2)
-	extraEdges <- c(unlist(rbind(1:10, 101)), unlist(rbind(91:100, 102)))
+	extraEdges <- c(unlist(rbind(1:5, 26)), unlist(rbind(21:25, 27)))
 	graph <- igraph::add_edges(graph, extraEdges)
 
 	capacityMatrix1 <- getCapacityMatrix(rho = 0.5, epsilon = epsilon, bi = 10)
-	capacityList <- replicate(180+20, capacityMatrix1, simplify=FALSE)
-	maxPossibleFlow <- 100
+	capacityList <- replicate(40+10, capacityMatrix1, simplify=FALSE)
+	maxPossibleFlow <- 50
 } else
 {
 	stop("Unknown graph")
@@ -174,7 +174,7 @@ if(method == "crudeMC")
 	} else 
 	{
 		results <- list()
-		pilot <- generalisedSplittingAdaptiveEvolution(graph = graph, capacityMatrix = capacityList, n = n, seed = SCENARIO_INDEX + counter * 100000 - 1, interestVertices = interestVertices, verbose=FALSE, fraction = 10, level = demand)
+		pilot <- generalisedSplittingAdaptiveEvolution(graph = graph, capacityMatrix = capacityList, n = n/100, seed = SCENARIO_INDEX + counter * 100000 - 1, interestVertices = interestVertices, verbose=FALSE, fraction = 10, level = demand)
 		factors <- rep(10, length(pilot@times)-1)
 		save(pilot, factors, results, file = tmpFile)
 		file.rename(from = tmpFile, to = outputFile)
