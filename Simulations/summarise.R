@@ -81,53 +81,8 @@ averageEstimatesFunc <- function(x)
 }
 averageEstimates <- do.call(c, lapply(allResults, averageEstimatesFunc))
 
-varianceSingleSampleFunc <- function(x)
-{
-	if(is.null(x) || length(x) == 0)
-	{
-		return(NA)
-	}
-	if(class(x[[1]]) == "crudeMCResult")
-	{
-		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@data*(1 - y@data))))))
-	}
-	else if(class(x[[1]]) %in% "generalisedSplittingFixedFactorsEvolutionResult")
-	{
-		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@estimatedVariance)))) * x[[1]]@n)
-	}
-	else 
-	{
-		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@varianceSingleSample)))))
-	}
-}
-varianceSingleSample <- do.call(c, lapply(allResults, varianceSingleSampleFunc))
-workNormalizedSingleSampleVariancePlusPilot <- as.numeric(varianceSingleSample * secondsSingleSamplePlusPilot)
-workNormalizedSingleSampleVariance <- as.numeric(varianceSingleSample * secondsSingleSample)
-
-#This variance func uses the estimated variances of each run, where they are available
-varianceFunc <- function(x)
-{
-	if(is.null(x) || length(x) == 0)
-	{
-		return(NA)
-	}
-	if(class(x[[1]]) == "crudeMCResult")
-	{
-		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@data*(1 - y@data)/y@n)))))
-	}
-	else if(class(x[[1]]) == "generalisedSplittingFixedFactorsEvolutionResult")
-	{
-		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@estimatedVariance)))))
-	}
-	else 
-	{
-		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@varianceSingleSample/y@n)))))
-	}
-}
-variances <- do.call(c, lapply(allResults, varianceFunc))
-
 #This variance computation just uses the estimates of each of the 100 runs. 
-varianceFunc2 <- function(x)
+varianceFunc <- function(x)
 {
 	if(is.null(x) || length(x) == 0)
 	{
@@ -150,8 +105,31 @@ varianceFunc2 <- function(x)
 	sumSquared <- sum(values*values)
 	return(as.numeric(sumSquared / length(x) - (sum / length(x))^2))
 }
-variances2 <- do.call(c, lapply(allResults, varianceFunc2))
+variances <- do.call(c, lapply(allResults, varianceFunc))
 
+varianceSingleSampleFunc <- function(index)
+{
+	x <- allResults[[index]]
+	if(is.null(x) || length(x) == 0)
+	{
+		return(NA)
+	}
+	if(class(x[[1]]) == "crudeMCResult")
+	{
+		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@data*(1 - y@data))))))
+	}
+	else if(class(x[[1]]) %in% "generalisedSplittingFixedFactorsEvolutionResult")
+	{
+		return(variances[index]*x[[1]]@n)
+	}
+	else 
+	{
+		return(as.numeric(mean(do.call(c, lapply(x, function(y) y@varianceSingleSample)))))
+	}
+}
+varianceSingleSample <- do.call(c, lapply(1:length(allResults), varianceSingleSampleFunc))
+workNormalizedSingleSampleVariancePlusPilot <- as.numeric(varianceSingleSample * secondsSingleSamplePlusPilot)
+workNormalizedSingleSampleVariance <- as.numeric(varianceSingleSample * secondsSingleSample)
 relativeErrors <- sqrt(variances) / averageEstimates
 
 save(allResults, secondsSingleSample, varianceSingleSample, workNormalizedSingleSampleVariancePlusPilot, workNormalizedSingleSampleVariance, averageEstimates, averageSecondsPerRun, variances, relativeErrors, secondsSingleSamplePlusPilot, file = "summarised.RData")

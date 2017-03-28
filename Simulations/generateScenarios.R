@@ -1,5 +1,6 @@
 methods <- c("pmc", "turnipSingle", "turnipFull3", "turnipFull2", "turnipFull1")
-dodec5EqualCapacities <- expand.grid(method = c(methods, "gsFS"), demand = 5L, n = 50000L, nCapacities = 5, interestVertices = "1,20", stringsAsFactors=FALSE, epsilon = c(1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10, 1e-11, 1e-12, 1e-13, 1e-14, 1e-20), graph = "dodecahedron5EqualCapacity")
+#dodec5EqualCapacities <- expand.grid(method = c(methods, "gsFS"), demand = 5L, n = 50000L, nCapacities = 5, interestVertices = "1,20", stringsAsFactors=FALSE, epsilon = c(1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10, 1e-11, 1e-12, 1e-13, 1e-14, 1e-15, 1e-16, 1e-17, 1e-18, 1e-19, 1e-20), graph = "dodecahedron5EqualCapacity")
+dodec5EqualCapacities <- expand.grid(method = c(methods, "gsFS"), demand = 5L, n = 50000L, nCapacities = 5, interestVertices = "1,20", stringsAsFactors=FALSE, epsilon = c(1e-9, 1e-10, 1e-11, 1e-12, 1e-13, 1e-14, 1e-15), graph = "dodecahedron5EqualCapacity")
 
 dodec15UnequalCapacities <- expand.grid(method = c(methods, "gsFS"), demand = 25L, n = 50000L, nCapacities = 15, interestVertices = "1,20", stringsAsFactors=FALSE, epsilon = c(1e-6, 1e-7, 1e-8, 1e-9, 1e-10, 1e-11, 1e-12, 1e-13, 1e-14, 1e-20), graph = "dodecahedron15UnequalCapacity")
 
