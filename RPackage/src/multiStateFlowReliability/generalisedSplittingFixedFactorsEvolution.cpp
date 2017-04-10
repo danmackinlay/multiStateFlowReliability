@@ -116,7 +116,7 @@ namespace multistateTurnip
 		{
 			close(barHandle);
 		}
-		return Rcpp::List::create(Rcpp::Named("estimate") = args.estimate, Rcpp::Named("timeProbabilities") = args.timeProbabilities, Rcpp::Named("estimatedVariance") = args.estimatedVariance);
+		return Rcpp::List::create(Rcpp::Named("estimate") = args.estimate, Rcpp::Named("timeProbabilities") = args.timeProbabilities);
 	END_RCPP
 	}
 	SEXP generalisedSplittingFixedFactorsEvolution_igraph(SEXP graph, SEXP capacity, SEXP n, SEXP times_sexp, SEXP level_sexp, SEXP seed_sexp, SEXP interestVertices_sexp, SEXP verbose_sexp, SEXP factors_sexp)

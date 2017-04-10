@@ -76,7 +76,6 @@ namespace multistateTurnip
 		updateArgs.source = source;
 		updateArgs.sink = sink;
 
-		mpfr_class sum = 0, sumSquared = 0;
 		for(int sampleCounter = 0; sampleCounter < args.n; sampleCounter++)
 		{
 			std::copy(maximumCapacities.begin(), maximumCapacities.end(), capacity.begin());
@@ -250,19 +249,15 @@ namespace multistateTurnip
 					acceptedSamples++;
 				}
 			}
-			double ratio = (double)acceptedSamples / (double)productFactors;
-			sum += ratio;
-			sumSquared += ratio*ratio;
 		}
 		args.timeProbabilities.resize(args.times.size());
 		args.timeProbabilities[0] = (double)timeCounts[0] / (double)args.n;
+		args.estimate = (double)timeCounts[0] / (double)args.n;
 		for(int timeCounter = 0; timeCounter < (int)args.times.size()-1; timeCounter++)
 		{
 			args.timeProbabilities[timeCounter+1] = (double)timeCounts[timeCounter+1] / (double)(timeCounts[timeCounter]*args.splittingFactors[timeCounter]);
+			args.estimate *= args.timeProbabilities[timeCounter+1];
 		}
-		mpfr_class estimate_mpfr = sum / args.n;
-		args.estimatedVariance = (double)(sumSquared/args.n - estimate_mpfr * estimate_mpfr)/args.n;
-		args.estimate = (double)estimate_mpfr;
 	}
 }
 

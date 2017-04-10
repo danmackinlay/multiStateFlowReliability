@@ -58,6 +58,13 @@ for(currentGraph in graphs)
 				print(workNormalizedSingleSampleVariancePlot)
 			dev.off()
 
+			currentWorkNormalizedRelativeVarianceSingleSampleData <- subset(workNormalizedSingleSampleVarianceData, nCapacities == nCapacityLevels & demand == currentDemand & method != "crudeMC")
+			currentWorkNormalizedRelativeVarianceSingleSampleData$value <- currentWorkNormalizedRelativeVarianceSingleSampleData$value / (currentAverageEstimatesData$value^2)
+			workNormalizedSingleSampleRelativeVariancePlot <- ggplot(data=currentWorkNormalizedRelativeVarianceSingleSampleData, aes(x = epsilon, y = log10(value), group = method, colour = method)) + guides(col=guide_legend(ncol = 2, title=NULL)) + xlab("epsilon") + ylab("Work Normalized RelativeVariance Per Sample") + geom_line() + scale_colour_manual(values = colours) + scale_x_discrete(name = "epsilon") + theme(legend.position = c(0.77, 0.9)) + scale_y_continuous(labels = powerFormatter) + ggtitle(paste0("Work Normalized Relative Variances Per Sample, Demand = ", currentDemand, ", Capacity levels = ", nCapacityLevels)) + theme(plot.title = element_text(size = rel(1)))
+			pdf(paste0("./workNormalizedSingleSampleRelativeVariance-", nCapacityLevels, "-", currentDemand, ".pdf"))
+				print(workNormalizedSingleSampleRelativeVariancePlot)
+			dev.off()
+
 			currentVarianceDataSingleSample <- subset(varianceDataSingleSample, nCapacities == nCapacityLevels & demand == currentDemand & method != "crudeMC")
 			varianceDataSingleSamplePlot <- ggplot(data=currentVarianceDataSingleSample, aes(x = epsilon, y = log10(value), group = method, colour = method)) + guides(col=guide_legend(ncol = 2, title=NULL)) + xlab("epsilon") + ylab("Variance Per Sample") + geom_line() + scale_colour_manual(values = colours) + scale_x_discrete(name = "epsilon") + theme(legend.position = c(0.77, 0.9)) + scale_y_continuous(labels = powerFormatter) + ggtitle(paste0("Variances Per Sample, Demand = ", currentDemand, ", Capacity levels = ", nCapacityLevels))
 			pdf(paste0("./varianceSingleSample-", nCapacityLevels, "-", currentDemand, ".pdf"))

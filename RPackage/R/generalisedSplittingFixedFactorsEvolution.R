@@ -40,5 +40,5 @@ generalisedSplittingFixedFactorsEvolution <- function(graph, capacityMatrix, n, 
 	{
 		stop("Input graph must have class \"igraph\", \"graphAM\" or \"graphNEL\"")
 	}
-	return(new("generalisedSplittingFixedFactorsEvolutionResult", call = match.call(), start = start, end = end, n = as.integer(n), capacity = capacityMatrix, times = times, level = level, interestVertices = as.integer(interestVertices), seed = as.integer(seed), estimate = result$estimate, factors = factors, timeProbabilities = result$timeProbabilities, estimatedVariance = result$estimatedVariance))
+	return(new("generalisedSplittingFixedFactorsEvolutionResult", call = match.call(), start = start, end = end, n = as.integer(n), capacity = capacityMatrix, times = times, level = level, interestVertices = as.integer(interestVertices), seed = as.integer(seed), estimate = result$estimate, factors = factors, timeProbabilities = result$timeProbabilities))
 }
