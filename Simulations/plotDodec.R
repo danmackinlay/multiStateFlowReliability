@@ -9,6 +9,12 @@ powerFormatter <- function(x)
 	#xAsCharacter <- sapply(xAsCharacter, function(y) if(nchar(y) == 2) paste0(y, ".0") else y)
 	paste0("$10^{", xAsCharacter, "}$")
 }
+powerFormatterLog <- function(x)
+{
+	xAsCharacter <- as.character(log10(as.numeric(x)))
+	#xAsCharacter <- sapply(xAsCharacter, function(y) if(nchar(y) == 2) paste0(y, ".0") else y)
+	paste0("$10^{", xAsCharacter, "}$")
+}
 source("./generateScenarios.R")
 load("./summarised.RData")
 
@@ -35,6 +41,7 @@ for(nCapacityLevels in nCapacityLevels)
 			print(timePlot)
 		dev.off()
 
+		size <- 2
 		currentAverageEstimatesData <- subset(averageEstimatesData, nCapacities == nCapacityLevels & demand == currentDemand & method %in% c("gsFS", "pmc", "turnipFull1", "turnipFull2"))
 		estimatesPlot <- ggplot(data=currentAverageEstimatesData, aes(x = epsilon, y = log10(value), group = method, colour = method)) + guides(col=guide_legend(ncol = 2, title=NULL)) + xlab("epsilon") + ylab("Estimate") + geom_line() + scale_colour_manual(values = colours) + scale_x_discrete(name = "epsilon") + theme(legend.position = c(0.77, 0.9)) + scale_y_continuous(labels = powerFormatter) + ggtitle(paste0("Average estimates, Demand = ", currentDemand, ", Capacity levels = ", nCapacityLevels))
 		pdf(paste0("./estimates-", nCapacityLevels, "-", currentDemand, ".pdf"))
@@ -42,11 +49,12 @@ for(nCapacityLevels in nCapacityLevels)
 		dev.off()
 		
 		currentWorkNormalizedRelativeVariancePlusPilotData <- subset(workNormalizedRelativeVariancePlusPilotData, nCapacities == nCapacityLevels & demand == currentDemand & method %in% c("gsFS", "pmc", "turnipFull1", "turnipFull2"))
-		workNormalizedRelativeVariancePlot <- ggplot(data=currentWorkNormalizedRelativeVariancePlusPilotData, aes(x = epsilon, y = log10(value), group = method, colour = method)) + guides(col=guide_legend(ncol = 2, title=NULL)) + xlab("epsilon") + ylab("Work Normalized Relative Variance") + geom_line() + scale_colour_manual(values = colours) + scale_x_discrete(name = "epsilon") + theme(legend.position = c(0.25, 0.9)) + scale_y_continuous(labels = powerFormatter) + ggtitle(paste0("Work Normalized Relative Variances,  Demand = ", currentDemand, ", Capacity levels = ", nCapacityLevels)) + theme(plot.title = element_text(size = rel(1)))
+		xBreaks <- unique(currentWorkNormalizedRelativeVariancePlusPilotData$epsilon)[seq(1, 12, by = 2)]
+		workNormalizedRelativeVariancePlot <- ggplot(data=currentWorkNormalizedRelativeVariancePlusPilotData, aes(x = epsilon, y = log10(value), group = method, linetype = method, colour = method)) + guides(col=guide_legend(ncol = 2, title=NULL)) + xlab("$\\epsilon$") + ylab("Work Normalized Relative Variance") + geom_line(size = size) + scale_colour_manual(values = colours) + scale_x_discrete(name = "$\\epsilon$", labels = powerFormatterLog, breaks = xBreaks) + theme(legend.position = c(0.2, 0.8)) + scale_y_continuous(labels = powerFormatter) + ggtitle("") + theme(plot.title = element_text(size = rel(2)), axis.text = element_text(size = rel(1.5)), axis.title = element_text(size = rel(1.5)), legend.text = element_text(size = rel(1.25)), legend.key.width = unit(3, "line")) + guides(colour = guide_legend(title = "Method"), linetype = guide_legend(title = "Method"))
 		pdf(paste0("./workNormalizedRelativeVariance-", nCapacityLevels, "-", currentDemand, ".pdf"))
 			print(workNormalizedRelativeVariancePlot)
 		dev.off()
-		tikz(paste0("./workNormalizedRelativeVariance-", nCapacityLevels, "-", currentDemand, ".tex"))
+		tikz(paste0("./workNormalizedRelativeVariance-", nCapacityLevels, "-", currentDemand, ".tex"), width = 7, height = 7, standAlone = TRUE, packages = c("\\usepackage{amssymb}", "\\usepackage{tikz}", "\\usepackage[active,tightpage,psfixbb]{preview}", "\\PreviewEnvironment{pgfpicture}", "\\setlength\\PreviewBorder{0pt}"))
 			print(workNormalizedRelativeVariancePlot)	
 		dev.off()
 	}
