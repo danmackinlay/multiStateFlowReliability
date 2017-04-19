@@ -48,27 +48,17 @@ if(graph == "dodecahedron5EqualCapacity")
 	edgeMatrix <- igraph::get.edges(graph, igraph::E(graph))
 	secondCapacityEdges <- which(edgeMatrix[,1] %in% c(1, 20) | edgeMatrix[,2] %in% c(1, 20))
 	capacityList[secondCapacityEdges] <- replicate(length(secondCapacityEdges), capacityMatrix2, simplify=FALSE)
-} else if(graph == "grid5x5_1")
+} else if(graph == "grid4x4_1")
 {
-	graph <- igraph::make_lattice(dimvector = c(5,5))
+	graph <- igraph::make_lattice(dimvector = c(4,4))
 	capacityMatrix1 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 8)
 	capacityMatrix2 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 12)
-	capacityList <- replicate(40, capacityMatrix1, simplify=FALSE)
+	capacityList <- replicate(24, capacityMatrix1, simplify=FALSE)
 
 	edgeMatrix <- igraph::get.edges(graph, igraph::E(graph))
-	secondCapacityEdges <- which(edgeMatrix[,1] %in% c(1, 25) | edgeMatrix[,2] %in% c(1, 25))
+	secondCapacityEdges <- which(edgeMatrix[,1] %in% c(1, 16) | edgeMatrix[,2] %in% c(1, 16))
 	capacityList[secondCapacityEdges] <- replicate(length(secondCapacityEdges), capacityMatrix2, simplify=FALSE)
 	maxPossibleFlow <- 24
-} else if(graph == "grid5x5_2")
-{
-	graph <- igraph::make_lattice(dimvector = c(5,5))
-	graph <- igraph::add_vertices(graph, 2)
-	extraEdges <- c(unlist(rbind(1:5, 26)), unlist(rbind(21:25, 27)))
-	graph <- igraph::add_edges(graph, extraEdges)
-
-	capacityMatrix1 <- getCapacityMatrix(rho = 0.5, epsilon = epsilon, bi = 10)
-	capacityList <- replicate(40+10, capacityMatrix1, simplify=FALSE)
-	maxPossibleFlow <- 50
 } else
 {
 	stop("Unknown graph")

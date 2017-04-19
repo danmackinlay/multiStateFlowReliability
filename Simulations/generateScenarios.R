@@ -4,11 +4,9 @@ dodec5EqualCapacities <- expand.grid(method = c(methods, "gsFS"), demand = 5L, n
 
 dodec15UnequalCapacities <- expand.grid(method = c(methods, "gsFS"), demand = 25L, n = 50000L, nCapacities = 15, interestVertices = "1,20", stringsAsFactors=FALSE, epsilon = c(1e-6, 1e-7, 1e-8, 1e-9, 1e-10, 1e-11, 1e-12, 1e-13), graph = "dodecahedron15UnequalCapacity")
 
-grid5x5_1Scenarios <- expand.grid(method = c("pmc", "turnipSingle", "turnipFull3", "turnipFull2", "turnipFull1", "gsFS"), demand = 20, n = 50000L, nCapacities = 8, interestVertices = "1,25", stringsAsFactors=FALSE, epsilon = c(1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10, 1e-11, 1e-12, 1e-13), graph = "grid5x5_1")
+grid4x4_1Scenarios <- expand.grid(method = c("pmc", "turnipSingle", "turnipFull3", "turnipFull2", "turnipFull1", "gsFS"), demand = 20, n = 50000L, nCapacities = 8, interestVertices = "1,16", stringsAsFactors=FALSE, epsilon = c(1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10, 1e-11, 1e-12, 1e-13), graph = "grid4x4_1")
 
-grid5x5_2Scenarios <- expand.grid(method = c("pmc", "turnipSingle", "turnipFull3", "turnipFull2", "turnipFull1", "gsFS"), demand = 50, n = 50000L, nCapacities = 10, interestVertices = "26,27", stringsAsFactors=FALSE, epsilon = 0.01, graph = "grid5x5_2")
-
-scenarios <- rbind(grid5x5_1Scenarios, grid5x5_2Scenarios, dodec15UnequalCapacities, dodec5EqualCapacities)
+scenarios <- rbind(grid4x4_1Scenarios, dodec15UnequalCapacities, dodec5EqualCapacities)
 
 scenarios$file <- apply(scenarios, 1, function(x) paste0(as.numeric(x["epsilon"]), "-", as.integer(x["demand"]), "-", as.integer(x["n"]), "-", as.integer(x["nCapacities"]), "-", x["graph"], "-", x["method"], ".RData", sep=""))
 scenarios$nReps <- 300
