@@ -6,7 +6,9 @@ dodec15UnequalCapacities <- expand.grid(method = c(methods, "gsFS"), demand = 25
 
 grid4x4_1Scenarios <- expand.grid(method = c("pmc", "turnipSingle", "turnipFull3", "turnipFull2", "turnipFull1", "gsFS"), demand = 20, n = 50000L, nCapacities = 8, interestVertices = "1,16", stringsAsFactors=FALSE, epsilon = c(1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10, 1e-11, 1e-12, 1e-13), graph = "grid4x4_1")
 
-scenarios <- rbind(grid4x4_1Scenarios, dodec15UnequalCapacities, dodec5EqualCapacities)
+grid3x3_1Scenarios <- expand.grid(method = c("pmc", "turnipSingle", "turnipFull3", "turnipFull2", "turnipFull1", "gsFS"), demand = 20, n = 50000L, nCapacities = 8, interestVertices = "1,9", stringsAsFactors=FALSE, epsilon = c(1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10, 1e-11, 1e-12, 1e-13), graph = "grid3x3_1")
+
+scenarios <- rbind(grid4x4_1Scenarios, grid3x3_1Scenarios, dodec15UnequalCapacities, dodec5EqualCapacities)
 
 scenarios$file <- apply(scenarios, 1, function(x) paste0(as.numeric(x["epsilon"]), "-", as.integer(x["demand"]), "-", as.integer(x["n"]), "-", as.integer(x["nCapacities"]), "-", x["graph"], "-", x["method"], ".RData", sep=""))
 scenarios$nReps <- 300
