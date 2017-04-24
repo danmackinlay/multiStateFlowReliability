@@ -18,9 +18,9 @@ powerFormatterLog <- function(x)
 source("./generateScenarios.R")
 load("./summarised.RData")
 
-currentGraph <- "dodecahedron5EqualCapacity"
-dir.create("dodecahedron5EqualCapacityPaper", showWarnings = FALSE)
-setwd("dodecahedron5EqualCapacityPaper")
+currentGraph <- "grid4x4_1"
+dir.create("grid4x4_1", showWarnings = FALSE)
+setwd("grid4x4_1")
 
 #Rename valus in method column
 scenarios$method[scenarios$method == "gsFS"] <- "GS"
@@ -56,7 +56,7 @@ for(nCapacityLevels in nCapacityLevels)
 		dev.off()
 		
 		currentWorkNormalizedRelativeVariancePlusPilotData <- subset(workNormalizedRelativeVariancePlusPilotData, nCapacities == nCapacityLevels & demand == currentDemand & method %in% c("GS", "PMC", "PMC-All", "PMC-Single"))
-		xBreaks <- unique(currentWorkNormalizedRelativeVariancePlusPilotData$epsilon)[seq(1, length(unique(currentWorkNormalizedRelativeVariancePlusPilotData$epsilon)), by = 2)]
+		xBreaks <- unique(currentWorkNormalizedRelativeVariancePlusPilotData$epsilon)[seq(2, length(unique(currentWorkNormalizedRelativeVariancePlusPilotData$epsilon)), by = 2)]
 		workNormalizedRelativeVariancePlot <- ggplot(data=currentWorkNormalizedRelativeVariancePlusPilotData, aes(x = epsilon, y = log10(value), group = method, linetype = method, colour = method)) + guides(col=guide_legend(ncol = 2, title=NULL)) + xlab("$\\epsilon$") + ylab("Work Normalized Relative Variance") + geom_line(size = size) + scale_colour_manual(values = colours) + scale_x_discrete(name = "$\\epsilon$", labels = powerFormatterLog, breaks = xBreaks) + theme(legend.position = c(0.2, 0.8)) + scale_y_continuous(labels = powerFormatter) + ggtitle("") + theme(plot.title = element_text(size = rel(2)), axis.text = element_text(size = rel(1.5)), axis.title = element_text(size = rel(1.5)), legend.text = element_text(size = rel(1.25)), legend.key.width = unit(3, "line")) + guides(colour = guide_legend(title = "Method"), linetype = guide_legend(title = "Method"))
 		pdf(paste0("./workNormalizedRelativeVariance-", nCapacityLevels, "-", currentDemand, ".pdf"))
 			print(workNormalizedRelativeVariancePlot)
@@ -66,7 +66,7 @@ for(nCapacityLevels in nCapacityLevels)
 		dev.off()
 
 		currentRelativeErrorData <- subset(relativeErrorData, nCapacities == nCapacityLevels & demand == currentDemand & method %in% c("GS", "PMC", "PMC-All", "PMC-Single"))
-		xBreaks <- unique(currentRelativeErrorData$epsilon)[seq(1, length(unique(currentRelativeErrorData$epsilon)), by = 2)]
+		xBreaks <- unique(currentRelativeErrorData$epsilon)[seq(2, length(unique(currentRelativeErrorData$epsilon)), by = 2)]
 		relativeErrorPlot <- ggplot(data=currentRelativeErrorData, aes(x = epsilon, y = log10(value), group = method, linetype = method, colour = method)) + guides(col=guide_legend(ncol = 2, title=NULL)) + xlab("$\\epsilon$") + ylab("Relative Error") + geom_line(size = size) + scale_colour_manual(values = colours) + scale_x_discrete(name = "$\\epsilon$", labels = powerFormatterLog, breaks = xBreaks) + theme(legend.position = c(0.2, 0.85)) + scale_y_continuous(labels = powerFormatter) + ggtitle("") + theme(plot.title = element_text(size = rel(2)), axis.text = element_text(size = rel(1.5)), axis.title = element_text(size = rel(1.5)), legend.text = element_text(size = rel(1.25)), legend.key.width = unit(3, "line")) + guides(colour = guide_legend(title = "Method"), linetype = guide_legend(title = "Method"))
 		pdf(paste0("./relativeError-", nCapacityLevels, "-", currentDemand, ".pdf"))
 			print(relativeErrorPlot)
