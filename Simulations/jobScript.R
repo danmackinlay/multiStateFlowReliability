@@ -49,22 +49,12 @@ if(graph == "dodecahedron5EqualCapacity")
 {
 	graph <- igraph::make_lattice(dimvector = c(4,4))
 	capacityMatrix1 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 8)
-	capacityMatrix2 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 12)
 	capacityList <- replicate(24, capacityMatrix1, simplify=FALSE)
-
-	edgeMatrix <- igraph::get.edges(graph, igraph::E(graph))
-	secondCapacityEdges <- which(edgeMatrix[,1] %in% c(1, 16) | edgeMatrix[,2] %in% c(1, 16))
-	capacityList[secondCapacityEdges] <- replicate(length(secondCapacityEdges), capacityMatrix2, simplify=FALSE)
 } else if(graph == "grid3x3_1")
 {
 	graph <- igraph::make_lattice(dimvector = c(3,3))
 	capacityMatrix1 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 8)
-	capacityMatrix2 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 12)
 	capacityList <- replicate(12, capacityMatrix1, simplify=FALSE)
-
-	edgeMatrix <- igraph::get.edges(graph, igraph::E(graph))
-	secondCapacityEdges <- which(edgeMatrix[,1] %in% c(1, 9) | edgeMatrix[,2] %in% c(1, 9))
-	capacityList[secondCapacityEdges] <- replicate(length(secondCapacityEdges), capacityMatrix2, simplify=FALSE)
 } else
 {
 	stop("Unknown graph")
