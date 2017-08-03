@@ -1,0 +1,5 @@
+source("./plotDodec.R")
+source("./plotGrid3.R")
+source("./plotGrid4.R")
+source("./plotGrid5.R")
+source("./plotGrid6.R")

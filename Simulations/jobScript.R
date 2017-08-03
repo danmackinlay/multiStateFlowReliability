@@ -50,11 +50,21 @@ if(graph == "dodecahedron5EqualCapacity")
 	graph <- igraph::make_lattice(dimvector = c(10,10))
 	capacityMatrix1 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 8)
 	capacityList <- replicate(180, capacityMatrix1, simplify=FALSE)
+} else if(graph == "grid6x6_1")
+{
+	graph <- igraph::make_lattice(dimvector = c(6,6))
+	capacityMatrix1 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 8)
+	capacityList <- replicate(60, capacityMatrix1, simplify=FALSE)
 } else if(graph == "grid5x5_1")
 {
 	graph <- igraph::make_lattice(dimvector = c(5,5))
 	capacityMatrix1 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 8)
 	capacityList <- replicate(40, capacityMatrix1, simplify=FALSE)
+} else if(graph == "grid4x4_1")
+{
+	graph <- igraph::make_lattice(dimvector = c(4,4))
+	capacityMatrix1 <- getCapacityMatrix(rho = 0.6, epsilon = epsilon, bi = 8)
+	capacityList <- replicate(24, capacityMatrix1, simplify=FALSE)
 } else if(graph == "grid3x3_1")
 {
 	graph <- igraph::make_lattice(dimvector = c(3,3))
